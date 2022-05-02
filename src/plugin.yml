@@ -1,0 +1,15 @@
+name: Staff
+main: fr.nessar.Staff
+description: Staff plugin.
+version: 1
+api-version: 1.8.8
+commands:
+  koth:
+    description: enable staff mod
+    permission: staff
+    usage: "Usage: /<command>"
+
+permissions:
+  staff:
+    description: allow base command staff
+    default: op
