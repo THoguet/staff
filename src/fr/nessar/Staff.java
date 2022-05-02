@@ -15,8 +15,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Staff extends JavaPlugin implements Listener {
 
-    private static final ItemStack[] staffInv = { new ItemStack(Material.COMPASS), new ItemStack(Material.BLAZE_ROD),
-            new ItemStack(Material.REDSTONE), new Dye(DyeColor.LIME).toItemStack(), };
     private static final String PREFIX = ChatColor.GRAY + "[" + ChatColor.GOLD + "Staff" + ChatColor.GRAY + "] "
             + ChatColor.RESET;
     private List<Report> reports;
@@ -86,7 +84,7 @@ public class Staff extends JavaPlugin implements Listener {
     }
 
     public void setStaffItem(Player p) {
-        p.getInventory().setContents(arg0);
+        // p.getInventory().setContents();
     }
 
     public void setStaffMod(Player p) {
