@@ -4,10 +4,20 @@ description: Staff plugin.
 version: 1
 api-version: 1.8.8
 commands:
-  koth:
+  staff:
     description: enable staff mod
     permission: staff
     usage: "Usage: /<command>"
+  freeze:
+    aliases: [block]
+    description: freeze the target
+    permission: staff.freeze
+    usage: "Usage: /<command> <target>"
+  unfreeze:
+    aliases: [defreeze, unblock, free]
+    description: freeze the target
+    permission: staff.unfreeze
+    usage: "Usage: /<command> <target>"
 
 permissions:
   staff:

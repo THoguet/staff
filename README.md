@@ -1,4 +1,4 @@
-## Staff plugin
+# Staff plugin
 
 * tempMute / mute
 * Freeze
@@ -29,6 +29,7 @@
     * duration => edit paper in anvil gui
     * message => edit paper in anvil gui
     * save as template from here
+* tickets and report same interface but not same command / accessible from the same interface as admin
 * [tickets](https://youtu.be/12jlZPFWp9U?t=105)
   * suggestion
   * help
@@ -48,7 +49,26 @@
   * arichve report / delete report (need perm) / process report => true (=> punishment with templates or nothing) / not sure / false
   * abusive report
   * comments on report => private / public (send to the reporter) delete comments (need perm)
-* [templates](https://youtu.be/12jlZPFWp9U?t=320)
+* [templates](https://youtu.be/12jlZPFWp9U?t=320) for punishments
 * staff chat
 * clear chat => don't clear if you have specific perm (or force it)
 * global mute chat
+
+DB:
+
+```sql
+CREATE TABLE reports(ID INT AUTO_INCREMENT PRIMARY KEY, report BOOLEAN, reportStatus TINYINT, reportTime BIGINT, reportReason VARCHAR(256), reported JAVA_OBJECT, reporter JAVA_OBJECT);
+CREATE TABLE chatHistory(messageId INT AUTO_INCREMENT PRIMARY KEY, messageDate BIGINT, messageAuthor UUID, message VARCHAR(256));
+CREATE TABLE templates(id INT AUTO_INCREMENT PRIMARY KEY, templateName VARCHAR(32), message VARCHAR(256), duration BIGINT, type TINYINT);
+CREATE TABLE punishments(id INT AUTO_INCREMENT PRIMARY KEY, punishedUUID UUID, message VARCHAR(256), punishmentType TINYINT, endtime BIGINT);
+```
+
+reportStatus =
+
+* 000 => wating
+* 001 => in progress
+* 010 => important
+* 100 => processed : abusive report / ticket
+* 101 => processed : false / unsolvable
+* 110 => processed : not sure / not solved
+* 111 => processed : true / solved
