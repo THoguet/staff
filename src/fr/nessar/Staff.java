@@ -3,11 +3,11 @@ package fr.nessar;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,7 +18,6 @@ import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -44,6 +43,7 @@ public class Staff extends JavaPlugin implements Listener {
     private List<StaffMod> inStaffMod;
     private List<Froze> frozen;
     private List<Menu> openMenu;
+    private List<OfflinePlayer> staffList;
 
     @Override
     public void onEnable() {
@@ -56,9 +56,6 @@ public class Staff extends JavaPlugin implements Listener {
             this.tpHereWhenDcInStaffMod = new Location(Bukkit.getServer().getWorld("world"), tpHereloc.get(0),
                     tpHereloc.get(1), tpHereloc.get(2));
         }
-        this.inStaffMod = new ArrayList<StaffMod>();
-        this.frozen = new ArrayList<Froze>();
-        this.openMenu = new ArrayList<Menu>();
         Staff.urlDB = "jdbc:h2:" + getDataFolder().getAbsolutePath() + "/data/database";
         Database.initializeDatabase();
         try {
@@ -71,6 +68,11 @@ public class Staff extends JavaPlugin implements Listener {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
+        this.inStaffMod = new ArrayList<StaffMod>();
+        this.frozen = new ArrayList<Froze>();
+        this.openMenu = new ArrayList<Menu>();
+        this.staffList = new ArrayList<OfflinePlayer>();
+        new UpdateStaffPerm(this).runTaskTimerAsynchronously(this, 0, 200);
         setupPermissions();
         getCommand("staff").setExecutor(new CommandStaffExecutor(this));
         getCommand("freeze").setExecutor(new CommandFreezeExecutor(this));
@@ -82,9 +84,18 @@ public class Staff extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
-        for (StaffMod sm : this.inStaffMod) {
-            toggleStaffMod(sm.getPlayer());
+        List<StaffMod> TODOStaff = new ArrayList<>(this.inStaffMod);
+        for (StaffMod sm : TODOStaff) {
+            if (sm != null)
+                toggleStaffMod(sm.getPlayer());
         }
+        Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "All staff mod are disabled");
+        List<Froze> TODOFrozes = new ArrayList<>(this.frozen);
+        for (Froze froze : TODOFrozes) {
+            if (froze != null)
+                toggleFreeze(froze.getFrozenPlayer());
+        }
+        Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "UnFreeze All players");
         try {
             for (Report report : this.reports) {
                 Database.addReportToDB(report);
@@ -109,9 +120,6 @@ public class Staff extends JavaPlugin implements Listener {
         } catch (SQLException e) {
             Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Punishments cannot be saved.");
         }
-        for (Froze froze : this.frozen) {
-            toggleFreeze(froze.getFrozenPlayer());
-        }
         Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Unloaded.");
     }
 
@@ -123,6 +131,14 @@ public class Staff extends JavaPlugin implements Listener {
 
     public Permission getPerms() {
         return this.perms;
+    }
+
+    public void setStaff(List<OfflinePlayer> newlist) {
+        this.staffList = newlist;
+    }
+
+    public List<OfflinePlayer> getStaff() {
+        return this.staffList;
     }
 
     public void newReport(Player reporter, Player reported, String reportReason) {
@@ -237,7 +253,8 @@ public class Staff extends JavaPlugin implements Listener {
             if (inStaffMod.get(indexStaffMod).isStaffInv())
                 event.setCancelled(true);
             else {
-                if (event.getItemDrop().getItemStack().getType().equals(Material.STICK))
+                if (event.getItemDrop().getItemStack().getItemMeta().getDisplayName().equals(
+                        ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
                     event.setCancelled(true);
             }
         }
@@ -251,7 +268,8 @@ public class Staff extends JavaPlugin implements Listener {
             if (inStaffMod.get(indexStaffMod).isStaffInv())
                 event.setCancelled(true);
             else {
-                if (event.getOldCursor().getType().equals(Material.STICK))
+                if (event.getOldCursor().getItemMeta().getDisplayName().equals(
+                        ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
                     event.setCancelled(true);
             }
         }
@@ -264,21 +282,6 @@ public class Staff extends JavaPlugin implements Listener {
         if (indexStaffMod != -1) {
             if (inStaffMod.get(indexStaffMod).isStaffInv())
                 event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event) {
-        Player p = event.getPlayer();
-        int indexStaffMod = isInStaffMod(p);
-        if (indexStaffMod != -1) {
-            for (Froze frozenPlayer : this.frozen) {
-                if (p.hasLineOfSight(frozenPlayer.getFrozenPlayer()))
-                    this.inStaffMod.get(indexStaffMod).updateIslookingAtFrozePlayer(true);
-                return;
-            }
-            this.inStaffMod.get(indexStaffMod).updateIslookingAtFrozePlayer(false);
-            return;
         }
     }
 
@@ -299,7 +302,8 @@ public class Staff extends JavaPlugin implements Listener {
             if (inStaffMod.get(indexStaffMod).isStaffInv())
                 event.setCancelled(true);
             else {
-                if (!p.getInventory().getItem(8).getType().equals(Material.STICK))
+                if (!p.getInventory().getItem(8).getItemMeta().getDisplayName().equals(
+                        ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
                     event.setCancelled(true);
             }
         }
@@ -313,7 +317,8 @@ public class Staff extends JavaPlugin implements Listener {
             if (inStaffMod.get(indexStaffMod).isStaffInv())
                 event.setCancelled(true);
             else {
-                if (event.getCurrentItem() != null && event.getCurrentItem().getType().equals(Material.STICK))
+                if (event.getCurrentItem() != null && event.getCurrentItem().getItemMeta().getDisplayName()
+                        .equals(ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
                     event.setCancelled(true);
             }
         }
@@ -328,7 +333,8 @@ public class Staff extends JavaPlugin implements Listener {
                 if (inStaffMod.get(indexStaffMod).isStaffInv())
                     event.setCancelled(true);
                 else {
-                    if (event.getCurrentItem() != null && event.getCurrentItem().getType().equals(Material.STICK))
+                    if (event.getCurrentItem() != null && event.getCurrentItem().getItemMeta().getDisplayName().equals(
+                            ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
                         event.setCancelled(true);
                 }
             }
@@ -340,7 +346,9 @@ public class Staff extends JavaPlugin implements Listener {
         Player p = event.getPlayer();
         int indexStaffMod = isInStaffMod(p);
         if (indexStaffMod != -1) {
-            if (event.getMaterial().equals(Material.STICK) || inStaffMod.get(indexStaffMod).isStaffInv()) {
+            if (event.getItem().getItemMeta().getDisplayName().equals(
+                    ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off")
+                    || inStaffMod.get(indexStaffMod).isStaffInv()) {
                 event.setCancelled(true);
                 inStaffMod.get(indexStaffMod).toggleOrUseSlot(event.getMaterial());
             }

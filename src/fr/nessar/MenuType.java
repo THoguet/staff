@@ -44,8 +44,8 @@ public enum MenuType {
 				return ChatColor.GOLD + (report ? "Report" : "Ticket") + ChatColor.GRAY + " > " + ChatColor.YELLOW
 						+ "Nouveau";
 			case REPORTLIST:
-				return ChatColor.GOLD + "Reports / Tickets" + ChatColor.GRAY + " > " + ChatColor.YELLOW
-						+ "Page ";
+				return ChatColor.GOLD + (report ? "Report / Tickets" : "Ticket") + ChatColor.GRAY + " > "
+						+ ChatColor.YELLOW + "Page ";
 			case STAFFLIST:
 				return ChatColor.GOLD + "Staff en ligne" + ChatColor.GRAY + " > " + ChatColor.YELLOW
 						+ "Page ";
@@ -114,7 +114,7 @@ public enum MenuType {
 			case REPORTLIST:
 				return false;
 			case STAFFLIST:
-				return false;
+				return true;
 			case INREPORT:
 				return false;
 			case EDITSTATUS:
@@ -288,7 +288,7 @@ public enum MenuType {
 			case REPORTLIST:
 				return false;
 			case STAFFLIST:
-				return false;
+				return true;
 			case INREPORT:
 				return false;
 			case EDITSTATUS:
@@ -317,7 +317,7 @@ public enum MenuType {
 			case REPORTLIST:
 				return false;
 			case STAFFLIST:
-				return false;
+				return true;
 			case INREPORT:
 				return false;
 			case EDITSTATUS:

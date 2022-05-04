@@ -3,17 +3,16 @@ package fr.nessar;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -25,16 +24,15 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import net.md_5.bungee.api.ChatColor;
-import net.milkbowl.vault.permission.Permission;
 
 public class Menu implements Listener {
 
 	private Player user;
 	private MenuType menuType;
 	private Staff plugin;
-	private List<OfflinePlayer> staffList = null;
 
 	public Menu(Player p, MenuType menuType, Staff plugin) {
 		this.user = p;
@@ -67,7 +65,6 @@ public class Menu implements Listener {
 			case REPORTLIST:
 				return null;
 			case STAFFLIST:
-				this.staffList = getStaffList();
 				return getStaff(page);
 			case INREPORT:
 				return null;
@@ -131,26 +128,31 @@ public class Menu implements Listener {
 		return gui;
 	}
 
-	private List<OfflinePlayer> getStaffList() {
-		List<OfflinePlayer> staff = new ArrayList<>();
-		List<OfflinePlayer> offlineP = Arrays.asList(Bukkit.getOfflinePlayers());
-		for (OfflinePlayer p : offlineP) {
-			if (plugin.getPerms().playerHas("world", p, "staff"))
-				staff.add(p);
-		}
-		return staff;
-	}
-
 	public Inventory getStaff(int page) {
+		List<OfflinePlayer> staffList = this.plugin.getStaff();
 		Inventory gui = getBase(false, page);
 		ItemStack teteHero = StaffMod.setNameItem(ChatColor.GOLD + "Staff en ligne",
 				Menu.getPlayerHead("MHF_Herobrine"));
 		gui.setItem(4, teteHero);
-		for (int i = 28 * (page - 1); i < this.staffList.size() && i < 28 * page; i++) {
+		ItemStack reportOrTickets = new ItemStack(Material.BOOKSHELF);
+		String nameReportsOrTickets = "";
+		if (this.user.hasPermission("staff.tickets") && this.user.hasPermission("staff.reports"))
+			nameReportsOrTickets = "Tickets / Reports";
+		else {
+			if (this.user.hasPermission("staff.tickets"))
+				nameReportsOrTickets = "Tickets";
+			if (this.user.hasPermission("staff.reports"))
+				nameReportsOrTickets = "Reports";
+		}
+		reportOrTickets = StaffMod.setNameItem(ChatColor.GOLD + nameReportsOrTickets, reportOrTickets);
+		gui.setItem(0, reportOrTickets);
+		ItemStack archives = StaffMod.setNameItem(ChatColor.GOLD + "Archives", new ItemStack(Material.BOOKSHELF));
+		gui.setItem(8, archives);
+		for (int i = 28 * (page - 1); i < staffList.size() && i < 28 * page; i++) {
 			int caseNumber = 18 + i - (28 * (page - 1));
 			List<String> itemLore = new ArrayList<>();
-			OfflinePlayer playerStaff = this.staffList.get(i);
-			boolean isStaffOnline = this.staffList.get(i).isOnline();
+			OfflinePlayer playerStaff = staffList.get(i);
+			boolean isStaffOnline = staffList.get(i).isOnline();
 			itemLore.add(ChatColor.GRAY + "En ligne: "
 					+ (isStaffOnline ? ChatColor.GREEN + "Oui" : ChatColor.DARK_RED + "Non"));
 			if (isStaffOnline) {
@@ -168,23 +170,44 @@ public class Menu implements Listener {
 		return gui;
 	}
 
+	public Inventory getReports(int page, boolean report, boolean ticket) {
+		Inventory gui = getBase(false, page);
+		return gui;
+	}
+
 	public Inventory getNewReport() {
 		return null;
 	}
 
-	public void interactItem(int caseNumber, ClickType clickType) {
-		caseNumber -= 18;
+	public void interactItem(InventoryClickEvent event) {
+		List<OfflinePlayer> staffList = this.plugin.getStaff();
+		int caseNumber = -999;
+		caseNumber = event.getRawSlot();
+		ItemStack item = event.getCurrentItem();
+		ItemMeta itemM = null;
+		if (item != null)
+			itemM = item.getItemMeta();
 		switch (this.menuType) {
+			case FREEZE:
+				event.setCancelled(true);
+				break;
 			case STAFFLIST:
-				Player p = this.staffList.get(caseNumber).getPlayer();
-				if (caseNumber >= 0 && caseNumber < this.staffList.size() && p != null) {
-					this.user.sendMessage(Staff.getSTAFF_PREFIX() + "Vous avez bien été TP.");
-					this.user.teleport(p.getLocation());
+				int indexStaffList = caseNumber - 18;
+				if (indexStaffList >= 0 && indexStaffList < staffList.size()) {
+					Player p = staffList.get(indexStaffList).getPlayer();
+					if (p != null) {
+						this.user.sendMessage(Staff.getSTAFF_PREFIX() + "Vous avez bien été TP.");
+						this.user.teleport(p.getLocation());
+					}
 				}
-				break;
-
 			default:
-				break;
+				if (caseNumber >= 0 && caseNumber < 54) {
+					event.setCancelled(true);
+					if (itemM != null && itemM.getDisplayName().contains("Fermer")) {
+						this.closeMenu();
+					}
+					break;
+				}
 		}
 	}
 
@@ -252,61 +275,61 @@ public class Menu implements Listener {
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(PlayerArmorStandManipulateEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(PlayerArmorStandManipulateEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(PlayerMoveEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(PlayerMoveEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(PlayerDropItemEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(PlayerDropItemEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(PlayerPickupItemEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(PlayerPickupItemEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(PlayerPortalEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(PlayerPortalEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(InventoryDragEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(InventoryDragEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(InventoryCloseEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(InventoryCloseEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(InventoryClickEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(InventoryClickEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(InventoryInteractEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(InventoryInteractEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(FoodLevelChangeEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(FoodLevelChangeEvent event) {
+		eventBehavour(event);
 	}
 
 	@EventHandler
-	public void frozePlayerEvent(EntityDamageEvent event) {
-		cancelAndMessageFrozenPlayer(event);
+	public void handleEvent(EntityDamageEvent event) {
+		eventBehavour(event);
 	}
 
-	private void cancelAndMessageFrozenPlayer(PlayerMoveEvent event) {
+	private void eventBehavour(PlayerMoveEvent event) {
 		Player p = event.getPlayer();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
 			if (this.menuType.eventBehavour(event)) {
@@ -316,7 +339,7 @@ public class Menu implements Listener {
 		}
 	}
 
-	private void cancelAndMessageFrozenPlayer(PlayerArmorStandManipulateEvent event) {
+	private void eventBehavour(PlayerArmorStandManipulateEvent event) {
 		Player p = event.getPlayer();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
 			if (this.menuType.eventBehavour(event)) {
@@ -326,7 +349,7 @@ public class Menu implements Listener {
 		}
 	}
 
-	private void cancelAndMessageFrozenPlayer(PlayerDropItemEvent event) {
+	private void eventBehavour(PlayerDropItemEvent event) {
 		Player p = event.getPlayer();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
 			if (this.menuType.eventBehavour(event)) {
@@ -336,7 +359,7 @@ public class Menu implements Listener {
 		}
 	}
 
-	private void cancelAndMessageFrozenPlayer(PlayerPickupItemEvent event) {
+	private void eventBehavour(PlayerPickupItemEvent event) {
 		Player p = event.getPlayer();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
 			if (this.menuType.eventBehavour(event)) {
@@ -346,7 +369,7 @@ public class Menu implements Listener {
 		}
 	}
 
-	private void cancelAndMessageFrozenPlayer(PlayerPortalEvent event) {
+	private void eventBehavour(PlayerPortalEvent event) {
 		Player p = event.getPlayer();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
 			if (this.menuType.eventBehavour(event)) {
@@ -356,17 +379,28 @@ public class Menu implements Listener {
 		}
 	}
 
-	private void cancelAndMessageFrozenPlayer(InventoryDragEvent event) {
+	private void eventBehavour(InventoryDragEvent event) {
 		Player p = (Player) event.getWhoClicked();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
 			if (this.menuType.eventBehavour(event)) {
-				event.setCancelled(true);
-				sendFrozeMessage(p);
+				switch (this.menuType) {
+					case FREEZE:
+						event.setCancelled(true);
+						sendFrozeMessage(p);
+						break;
+					case STAFFLIST:
+						// test if the drag hit any menu slot
+						event.getRawSlots().stream().anyMatch(
+								value -> !IntStream.rangeClosed(0, 54).anyMatch(rangeValue -> rangeValue == value));
+
+					default:
+						break;
+				}
 			}
 		}
 	}
 
-	private void cancelAndMessageFrozenPlayer(EntityDamageEvent event) {
+	private void eventBehavour(EntityDamageEvent event) {
 		if (event.getEntity() instanceof Player) {
 			Player p = (Player) event.getEntity();
 			if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
@@ -377,7 +411,7 @@ public class Menu implements Listener {
 		}
 	}
 
-	private void cancelAndMessageFrozenPlayer(FoodLevelChangeEvent event) {
+	private void eventBehavour(FoodLevelChangeEvent event) {
 		if (event.getEntity() instanceof Player) {
 			Player p = (Player) event.getEntity();
 			if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
@@ -388,34 +422,40 @@ public class Menu implements Listener {
 		}
 	}
 
-	public void cancelAndMessageFrozenPlayer(InventoryClickEvent event) {
+	public void eventBehavour(InventoryClickEvent event) {
 		Player p = (Player) event.getWhoClicked();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
 			if (this.menuType.eventBehavour(event)) {
-				this.interactItem(event.getRawSlot(), event.getClick());
-				event.setCancelled(true);
+				this.interactItem(event);
 				sendFrozeMessage(p);
 			}
 		}
 	}
 
-	public void cancelAndMessageFrozenPlayer(InventoryCloseEvent event) {
+	public void eventBehavour(InventoryCloseEvent event) {
 		Player p = (Player) event.getPlayer();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
 			if (this.menuType.eventBehavour(event)) {
-				Inventory toOpen = this.getInv(-1);
-				Bukkit.getServer().getScheduler().runTask(this.plugin, new Runnable() {
-					@Override
-					public void run() {
-						p.openInventory(toOpen);
-					}
-				});
-				sendFrozeMessage(p);
+				switch (this.menuType) {
+					case FREEZE:
+						Inventory toOpen = this.getInv(-1);
+						Bukkit.getServer().getScheduler().runTask(this.plugin, new Runnable() {
+							@Override
+							public void run() {
+								p.openInventory(toOpen);
+							}
+						});
+						sendFrozeMessage(p);
+						break;
+					default:
+						this.closeMenu();
+						break;
+				}
 			}
 		}
 	}
 
-	private void cancelAndMessageFrozenPlayer(InventoryInteractEvent event) {
+	private void eventBehavour(InventoryInteractEvent event) {
 		Player p = (Player) event.getWhoClicked();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
 			if (this.menuType.eventBehavour(event)) {

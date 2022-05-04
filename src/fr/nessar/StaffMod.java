@@ -6,10 +6,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.Dye;
+import org.bukkit.plugin.Plugin;
 
 public class StaffMod {
 	private Player who;
@@ -21,7 +23,6 @@ public class StaffMod {
 	private ItemStack only_important_item;
 	private ItemStack statusListening;
 	private ItemStack freeInv;
-	private boolean isLookingAtFrozePlayer;
 	private boolean vanished = false;
 	private boolean isSneaking = false;
 	private boolean only_important = false;
@@ -39,7 +40,8 @@ public class StaffMod {
 
 	public void toggleSneakStatus() {
 		this.isSneaking = !this.isSneaking;
-		this.setItem();
+		if (this.staffInv)
+			this.setItem();
 	}
 
 	public void toggleStatusListenting() {
@@ -90,17 +92,6 @@ public class StaffMod {
 			toggleStaffInv();
 	}
 
-	public void updateIslookingAtFrozePlayer(boolean update) {
-		if (this.isLookingAtFrozePlayer != update) {
-			this.isLookingAtFrozePlayer = update;
-			this.setItem();
-		}
-	}
-
-	public boolean isLookingAtFrozePlayer() {
-		return this.isLookingAtFrozePlayer;
-	}
-
 	public static ItemStack setNameItem(String name, ItemStack item) {
 		ItemMeta itemM = item.getItemMeta();
 		itemM.setDisplayName(name);
@@ -126,11 +117,7 @@ public class StaffMod {
 						ChatColor.GOLD + "Vanish" + ChatColor.GRAY + ": " + ChatColor.RED + "Off",
 						new Dye(DyeColor.GRAY).toItemStack(1));
 			}
-			if (!this.isLookingAtFrozePlayer()) {
-				this.freeze = StaffMod.setNameItem(ChatColor.BLUE + "Freeze", new ItemStack(Material.ICE));
-			} else {
-				this.freeze = StaffMod.setNameItem(ChatColor.BLUE + "UnFreeze", new ItemStack(Material.PACKED_ICE));
-			}
+			this.freeze = StaffMod.setNameItem(ChatColor.BLUE + "Freeze", new ItemStack(Material.ICE));
 			if (isSneaking) {
 				this.reportsOrStaff = setNameItem(ChatColor.GOLD + "Staff list", Menu.getPlayerHead("MHF_Herobrine"));
 			} else {

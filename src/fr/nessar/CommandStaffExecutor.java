@@ -28,8 +28,13 @@ public class CommandStaffExecutor implements CommandExecutor {
 		}
 		Player p = (Player) sender;
 		if (commandLabel.equalsIgnoreCase("staff") && args.length == 0) {
-			plugin.toggleStaffMod(p);
+			this.plugin.toggleStaffMod(p);
 			return true;
+		} else if (commandLabel.equalsIgnoreCase("staff") && args.length == 1) {
+			if (args[0].equalsIgnoreCase("list") && p.hasPermission(PREFIX_PERMISSION + "list")) {
+				new Menu(p, MenuType.STAFFLIST, this.plugin, 1);
+				return true;
+			}
 		}
 		p.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Mauvais usage de la commande.");
 		return false;
