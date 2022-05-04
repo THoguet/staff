@@ -1,67 +1,56 @@
 package fr.nessar;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 public class SaveInventory {
 	private Player owner;
-	private List<ItemStack> inventory;
-	private List<ItemStack> armor;
-
-	public SaveInventory(Player p, List<ItemStack> inventory, List<ItemStack> armor) {
-		this.owner = p;
-		this.armor = armor;
-		this.inventory = inventory;
-	}
+	private ItemStack[] inventory;
+	private ItemStack[] armor;
 
 	public SaveInventory(Player p) {
 		this.owner = p;
-		this.armor = saveArmor(p);
 		this.inventory = saveInv(p);
+		this.armor = saveArmor(p);
 	}
 
-	public List<ItemStack> saveInv(Player p) {
-		final List<ItemStack> invCont = new ArrayList<>();
-		for (ItemStack stack : p.getInventory().getContents()) {
-			if (stack != null)
-				invCont.add(stack);
+	public ItemStack[] saveInv(Player p) {
+		ItemStack[] ret = new ItemStack[36];
+		for (int i = 0; i < 36; i++) {
+			ret[i] = p.getInventory().getItem(i);
 		}
-		return invCont;
+		return ret;
 	}
 
-	public List<ItemStack> saveArmor(Player p) {
-		final List<ItemStack> armorCont = new ArrayList<>();
-		for (ItemStack stack : p.getInventory().getArmorContents()) {
-			if (stack != null)
-				armorCont.add(stack);
-		}
-		return armorCont;
+	public ItemStack[] saveArmor(Player p) {
+		ItemStack[] ret = new ItemStack[4];
+		ret[3] = p.getInventory().getHelmet();
+		ret[2] = p.getInventory().getChestplate();
+		ret[1] = p.getInventory().getLeggings();
+		ret[0] = p.getInventory().getBoots();
+		return ret;
 	}
 
 	public void loadInventory() {
 		SaveInventory.clear(this.owner);
-		for (int i = 0; i < this.inventory.size(); i++) {
-			this.owner.getInventory().setItem(i, this.inventory.get(i));
+		for (int i = 0; i < 36; i++) {
+			this.owner.getInventory().setItem(i, this.inventory[i]);
 		}
+		this.owner.getInventory().setArmorContents(this.armor);
 	}
 
 	public Player getOwner() {
 		return this.owner;
 	}
 
-	public List<ItemStack> getInventory() {
-		return this.inventory;
-	}
-
-	public List<ItemStack> getArmor() {
-		return this.armor;
-	}
-
 	public static void clear(Player p) {
-		p.getInventory().clear();
-		p.getInventory().setArmorContents(new ItemStack[4]);
+		for (int i = 0; i < 36; i++) {
+			p.getInventory().setItem(i, new ItemStack(Material.AIR));
+		}
+		p.getInventory().setHelmet(new ItemStack(Material.AIR));
+		p.getInventory().setChestplate(new ItemStack(Material.AIR));
+		p.getInventory().setLeggings(new ItemStack(Material.AIR));
+		p.getInventory().setBoots(new ItemStack(Material.AIR));
 	}
 }

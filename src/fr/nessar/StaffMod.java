@@ -1,5 +1,7 @@
 package fr.nessar;
 
+import java.util.List;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
@@ -7,7 +9,6 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.material.Dye;
 
 public class StaffMod {
@@ -20,6 +21,7 @@ public class StaffMod {
 	private ItemStack only_important_item;
 	private ItemStack statusListening;
 	private ItemStack freeInv;
+	private boolean isLookingAtFrozePlayer;
 	private boolean vanished = false;
 	private boolean isSneaking = false;
 	private boolean only_important = false;
@@ -33,6 +35,11 @@ public class StaffMod {
 		this.savedInv = new SaveInventory(p);
 		this.setItem();
 		p.sendMessage(Staff.getSTAFF_PREFIX() + "Vous êtes desormais en staff mod !");
+	}
+
+	public void toggleSneakStatus() {
+		this.isSneaking = !this.isSneaking;
+		this.setItem();
 	}
 
 	public void toggleStatusListenting() {
@@ -68,31 +75,13 @@ public class StaffMod {
 		this.setItem();
 	}
 
-	public void toggleOrUseSlot(int slot) {
-		if (slot == 0) {
-			toggleVanish();
-		} else if (slot == 4) {
-			if (isSneaking) {
-				// Menu.open() TODO
-			} else {
-				// Menu.open() TODO
-			}
-		} else if (slot == 6) {
-			this.toggleImportant();
-		} else if (slot == 7) {
-			this.toggleStatusListenting();
-		} else if (slot == 8) {
-			this.toggleStaffInv();
-		}
-	}
-
 	public void toggleOrUseSlot(Material m) {
 		if (m.equals(Material.INK_SACK))
 			toggleVanish();
 		else if (m.equals(Material.PAPER)) {
 			// Menu.open() // TODO
-		} else if (m.equals(Material.SKULL)) {
-			// Menu.open() // TODO
+		} else if (m.equals(Material.SKULL_ITEM)) {
+			new Menu(who, MenuType.STAFFLIST, plugin, 1);
 		} else if (m.equals(Material.REDSTONE) || m.equals(Material.SULPHUR))
 			toggleImportant();
 		else if (m.equals(Material.TORCH) || m.equals(Material.LEVER) || m.equals(Material.REDSTONE_TORCH_ON))
@@ -101,13 +90,27 @@ public class StaffMod {
 			toggleStaffInv();
 	}
 
+	public void updateIslookingAtFrozePlayer(boolean update) {
+		if (this.isLookingAtFrozePlayer != update) {
+			this.isLookingAtFrozePlayer = update;
+			this.setItem();
+		}
+	}
+
 	public boolean isLookingAtFrozePlayer() {
-		return false; // TODO
+		return this.isLookingAtFrozePlayer;
 	}
 
 	public static ItemStack setNameItem(String name, ItemStack item) {
 		ItemMeta itemM = item.getItemMeta();
 		itemM.setDisplayName(name);
+		item.setItemMeta(itemM);
+		return item;
+	}
+
+	public static ItemStack setLoreitem(List<String> lore, ItemStack item) {
+		ItemMeta itemM = item.getItemMeta();
+		itemM.setLore(lore);
 		item.setItemMeta(itemM);
 		return item;
 	}
@@ -123,14 +126,13 @@ public class StaffMod {
 						ChatColor.GOLD + "Vanish" + ChatColor.GRAY + ": " + ChatColor.RED + "Off",
 						new Dye(DyeColor.GRAY).toItemStack(1));
 			}
-			if (this.isLookingAtFrozePlayer()) {
+			if (!this.isLookingAtFrozePlayer()) {
 				this.freeze = StaffMod.setNameItem(ChatColor.BLUE + "Freeze", new ItemStack(Material.ICE));
 			} else {
 				this.freeze = StaffMod.setNameItem(ChatColor.BLUE + "UnFreeze", new ItemStack(Material.PACKED_ICE));
 			}
 			if (isSneaking) {
-				this.reportsOrStaff = setNameItem(ChatColor.GOLD + "Staff list",
-						SetHerobrineHead(new ItemStack(Material.SKULL_ITEM, 1, (byte) 3)));
+				this.reportsOrStaff = setNameItem(ChatColor.GOLD + "Staff list", Menu.getPlayerHead("MHF_Herobrine"));
 			} else {
 				ReportStatus minimalStatus = ReportStatus.WAITING;
 				if (this.only_important) {
@@ -168,13 +170,6 @@ public class StaffMod {
 		}
 	}
 
-	public ItemStack SetHerobrineHead(ItemStack skull) {
-		SkullMeta itemM = (SkullMeta) Bukkit.getItemFactory().getItemMeta(Material.SKULL_ITEM);
-		itemM.setOwner("d0b15454-36fa-43e4-a247-f882bb9fe288");
-		skull.setItemMeta(itemM);
-		return skull;
-	}
-
 	public String getItemNamePaper(ReportStatus minimalStatus) {
 		String ret = ChatColor.GOLD + "" + ChatColor.BOLD;
 		if (this.only_report) {
@@ -185,7 +180,8 @@ public class StaffMod {
 			ret += "Report & Ticket list ";
 		}
 		return ret += "(" + ChatColor.GRAY
-				+ String.valueOf(this.plugin.getNbReport(minimalStatus, 0, this.getNbReportReportArg())) + ")";
+				+ String.valueOf(this.plugin.getNbReport(minimalStatus, 0, this.getNbReportReportArg()))
+				+ ChatColor.GOLD + ")";
 	}
 
 	public void setItem() {
