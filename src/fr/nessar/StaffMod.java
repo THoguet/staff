@@ -2,16 +2,13 @@ package fr.nessar;
 
 import java.util.List;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.Dye;
-import org.bukkit.plugin.Plugin;
 
 public class StaffMod {
 	private Player who;
@@ -81,7 +78,7 @@ public class StaffMod {
 		if (m.equals(Material.INK_SACK))
 			toggleVanish();
 		else if (m.equals(Material.PAPER)) {
-			// Menu.open() // TODO
+			new Menu(who, MenuType.REPORTLIST, plugin, 1);
 		} else if (m.equals(Material.SKULL_ITEM)) {
 			new Menu(who, MenuType.STAFFLIST, plugin, 1);
 		} else if (m.equals(Material.REDSTONE) || m.equals(Material.SULPHUR))

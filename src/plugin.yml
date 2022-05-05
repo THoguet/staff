@@ -18,6 +18,10 @@ commands:
     description: freeze the target
     permission: staff.unfreeze
     usage: "Usage: /<command> <target>"
+  report:
+    description: freeze the target
+    permission: staff.report
+    usage: "Usage: /<command> <target> (reason)"
 
 permissions:
   staff:

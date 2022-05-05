@@ -1,7 +1,6 @@
 package fr.nessar;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -19,6 +18,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
@@ -63,7 +63,7 @@ public class Menu implements Listener {
 			case NEWREPORT:
 				return null;
 			case REPORTLIST:
-				return null;
+				return getReports(page);
 			case STAFFLIST:
 				return getStaff(page);
 			case INREPORT:
@@ -108,8 +108,12 @@ public class Menu implements Listener {
 	}
 
 	private Inventory getBase(boolean report, int page) {
+		return getBase(report, page, "");
+	}
+
+	private Inventory getBase(boolean report, int page, String completeName) {
 		Inventory gui = Bukkit.createInventory(null, 54,
-				this.menuType.getMenuName(false) + (page != -1 ? String.valueOf(page) : ""));
+				this.menuType.getMenuName(false) + completeName + (page != -1 ? String.valueOf(page) : ""));
 		List<ItemStack> listItem = new ArrayList<>();
 		for (int i = 0; i < 54; i++) {
 			listItem.add(new ItemStack(Material.AIR));
@@ -170,8 +174,45 @@ public class Menu implements Listener {
 		return gui;
 	}
 
-	public Inventory getReports(int page, boolean report, boolean ticket) {
-		Inventory gui = getBase(false, page);
+	public Inventory getReports(int page) {
+		boolean permReport = false;
+		boolean permTicket = false;
+		List<Report> reportsList = plugin.getReports();
+		ItemStack reportOrTickets = new ItemStack(Material.BOOKSHELF);
+		String nameReportsOrTickets = "";
+		if (this.user.hasPermission("staff.tickets") && this.user.hasPermission("staff.reports"))
+			nameReportsOrTickets = "Tickets / Reports";
+		else {
+			if (this.user.hasPermission("staff.tickets")) {
+				nameReportsOrTickets = "Tickets";
+				permTicket = true;
+			}
+			if (this.user.hasPermission("staff.reports")) {
+				nameReportsOrTickets = "Reports";
+				permReport = true;
+			}
+		}
+		Inventory gui = getBase(permReport, page);
+		gui.setItem(4, StaffMod.setNameItem(ChatColor.GOLD + nameReportsOrTickets, reportOrTickets));
+
+		ItemStack archives = StaffMod.setNameItem(ChatColor.GOLD + "Archives", new ItemStack(Material.BOOKSHELF));
+		gui.setItem(8, archives);
+		for (int i = 28 * (page - 1); i < reportsList.size() && i < 28 * page; i++) {
+			Report report = reportsList.get(i);
+			if (report.isReport() != permReport && report.isTicket() != permTicket)
+				continue;
+			int caseNumber = 18 + i - (28 * (page - 1));
+			List<String> itemLore = report.getLore();
+			ItemStack itemReport;
+			if (report.isReport())
+				itemReport = StaffMod.setNameItem(ChatColor.RED + "Report " + ChatColor.GRAY + "#" + i,
+						new ItemStack(Material.PAPER));
+			else
+				itemReport = StaffMod.setNameItem(ChatColor.BLUE + "Ticket " + ChatColor.GRAY + "#" + i,
+						new ItemStack(Material.EMPTY_MAP));
+			itemReport = StaffMod.setLoreitem(itemLore, itemReport);
+			gui.setItem(caseNumber, itemReport);
+		}
 		return gui;
 	}
 
@@ -379,6 +420,11 @@ public class Menu implements Listener {
 		}
 	}
 
+	private boolean isDragOnCreatedInv(InventoryDragEvent event) {
+		return event.getRawSlots().stream().anyMatch(
+				value -> IntStream.rangeClosed(0, 54).anyMatch(rangeValue -> rangeValue == value));
+	}
+
 	private void eventBehavour(InventoryDragEvent event) {
 		Player p = (Player) event.getWhoClicked();
 		if (this.user != null && this.user.getUniqueId().equals(p.getUniqueId())) {
@@ -390,9 +436,9 @@ public class Menu implements Listener {
 						break;
 					case STAFFLIST:
 						// test if the drag hit any menu slot
-						event.getRawSlots().stream().anyMatch(
-								value -> !IntStream.rangeClosed(0, 54).anyMatch(rangeValue -> rangeValue == value));
-
+						event.setCancelled(isDragOnCreatedInv(event));
+					case REPORTLIST:
+						event.setCancelled(isDragOnCreatedInv(event));
 					default:
 						break;
 				}

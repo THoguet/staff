@@ -83,7 +83,7 @@ public enum MenuType {
 			case NEWREPORT:
 				return false;
 			case REPORTLIST:
-				return false;
+				return true;
 			case STAFFLIST:
 				return true;
 			case INREPORT:
@@ -112,7 +112,7 @@ public enum MenuType {
 			case NEWREPORT:
 				return false;
 			case REPORTLIST:
-				return false;
+				return true;
 			case STAFFLIST:
 				return true;
 			case INREPORT:
@@ -286,7 +286,7 @@ public enum MenuType {
 			case NEWREPORT:
 				return false;
 			case REPORTLIST:
-				return false;
+				return true;
 			case STAFFLIST:
 				return true;
 			case INREPORT:
@@ -315,7 +315,7 @@ public enum MenuType {
 			case NEWREPORT:
 				return false;
 			case REPORTLIST:
-				return false;
+				return true;
 			case STAFFLIST:
 				return true;
 			case INREPORT:

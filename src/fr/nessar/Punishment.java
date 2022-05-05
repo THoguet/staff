@@ -27,12 +27,12 @@ public class Punishment {
 
 	public Punishment(Player punished, Player punisher, String message, PunishType pType, long startTime, long endtime,
 			int reportID) {
-		new Punishment(punished.getUniqueId(), punisher.getUniqueId(), message, pType, startTime, endtime, reportID);
+		this(punished.getUniqueId(), punisher.getUniqueId(), message, pType, startTime, endtime, reportID);
 	}
 
 	public Punishment(UUID punishedUUID, UUID punisherUUID, String message, int pType, long startTime,
 			long endtime, int reportID) {
-		new Punishment(punishedUUID, punisherUUID, message, PunishType.valueOf(pType), startTime, endtime, reportID);
+		this(punishedUUID, punisherUUID, message, PunishType.valueOf(pType), startTime, endtime, reportID);
 	}
 
 	public UUID getPunishedUUID() {

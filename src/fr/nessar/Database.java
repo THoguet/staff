@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -35,13 +36,13 @@ public class Database {
 			Connection connection = Database.getConnection();
 			Statement statement = connection.createStatement();
 			statement.execute(
-					"CREATE TABLE IF NOT EXISTS reports(ID INT AUTO_INCREMENT PRIMARY KEY, report BOOLEAN, reportStatus TINYINT, reportTime BIGINT, reportReason VARCHAR(256), reported JAVA_OBJECT, reporter JAVA_OBJECT);");
+					"CREATE TABLE IF NOT EXISTS reports(ID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, report BOOLEAN, reportStatus TINYINT, reportTime BIGINT, reportReason VARCHAR(256), reported JAVA_OBJECT, reporter JAVA_OBJECT);");
 			statement.execute(
-					"CREATE TABLE IF NOT EXISTS chatHistory(messageId INT AUTO_INCREMENT PRIMARY KEY, messageDate BIGINT, messageAuthor UUID, message VARCHAR(256));");
+					"CREATE TABLE IF NOT EXISTS chatHistory(messageId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, messageDate BIGINT, messageAuthor UUID, message VARCHAR(256));");
 			statement.execute(
-					"CREATE TABLE IF NOT EXISTS templates(id INT AUTO_INCREMENT PRIMARY KEY, templateName VARCHAR(32), message VARCHAR(256), duration BIGINT, type TINYINT, itemName VARCHAR(64));");
+					"CREATE TABLE IF NOT EXISTS templates(id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, templateName VARCHAR(32), message VARCHAR(256), duration BIGINT, type TINYINT, itemName VARCHAR(64));");
 			statement.execute(
-					"CREATE TABLE IF NOT EXISTS punishments(id INT AUTO_INCREMENT PRIMARY KEY, punishedUUID UUID, message VARCHAR(256), punishmentType TINYINT, endtime BIGINT, startTime BIGINT, punisherUUID UUID, reportID INT);");
+					"CREATE TABLE IF NOT EXISTS punishments(id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, punishedUUID UUID, message VARCHAR(256), punishmentType TINYINT, endtime BIGINT, startTime BIGINT, punisherUUID UUID, reportID INT);");
 			connection.close();
 			Bukkit.getConsoleSender().sendMessage(Staff.getSTAFF_PREFIX() + "Database loaded");
 		} catch (Exception e) {
@@ -120,8 +121,10 @@ public class Database {
 		ResultSet rows = statement.executeQuery();
 		List<Report> ret = new ArrayList<Report>();
 		while (rows.next()) {
-			ret.add(new Report(rows.getObject("reporter", Player.class), rows.getObject("reported", Player.class),
-					rows.getString("reportReason"), rows.getLong("reportTime"), rows.getBoolean("report")));
+			ret.add(new Report(rows.getObject("reporter", PlayerSave.class),
+					rows.getObject("reported", PlayerSave.class),
+					rows.getString("reportReason"), rows.getLong("reportTime"), rows.getBoolean("report"),
+					ReportStatus.values()[(rows.getInt("reportStatus"))]));
 		}
 		connection.close();
 		return ret;
@@ -131,13 +134,13 @@ public class Database {
 		Connection conn = Database.getConnection();
 		PreparedStatement statement;
 		statement = conn.prepareStatement(
-				"INSERT INTO reports(report,reportStatus,reportTime,reportReason,reported, reporter) VALUES (?,?,?,?,?)");
-		statement.setBoolean(0, r.isReport());
-		statement.setInt(1, r.getStatus().getStatusCode());
-		statement.setLong(2, r.getReportTime());
-		statement.setString(3, r.getReportReason());
-		statement.setObject(4, r.getReported());
-		statement.setObject(4, r.getReporter());
+				"INSERT INTO reports(report, reportStatus, reportTime, reportReason, reported, reporter) VALUES (?,?,?,?,?,?)");
+		statement.setBoolean(1, r.isReport());
+		statement.setInt(2, r.getStatus().getStatusCode());
+		statement.setLong(3, r.getReportTime());
+		statement.setString(4, r.getReportReason());
+		statement.setObject(5, r.getReported());
+		statement.setObject(6, r.getReporter());
 		statement.execute();
 		conn.close();
 	}
@@ -146,7 +149,7 @@ public class Database {
 		Connection conn = Database.getConnection();
 		PreparedStatement statement;
 		statement = conn.prepareStatement(
-				"INSERT INTO templates(templateName,message,duration,type,itemName) VALUES (?,?,?,?)");
+				"INSERT INTO templates(templateName,message,duration,type,itemName) VALUES (?,?,?,?,?)");
 		statement.setString(0, template.getName());
 		statement.setString(1, template.getMessage());
 		statement.setLong(2, template.getDuration());
@@ -172,7 +175,7 @@ public class Database {
 		Connection conn = Database.getConnection();
 		PreparedStatement statement;
 		statement = conn.prepareStatement(
-				"INSERT INTO punishments(punishedUUID,message,punishmentType,endtime,startTime, punisherUUID,reportID) VALUES (?,?,?,?,?,?)");
+				"INSERT INTO punishments(punishedUUID,message,punishmentType,endtime,startTime, punisherUUID,reportID) VALUES (?,?,?,?,?,?,?)");
 		statement.setObject(0, punishment.getPunishedUUID());
 		statement.setString(1, punishment.getMessage());
 		statement.setInt(2, punishment.getpType().getPunishCode());

@@ -1,17 +1,18 @@
 package fr.nessar;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class CommandStaffExecutor implements CommandExecutor {
+public class CommandReportExecutor implements CommandExecutor {
 
 	private static final String PREFIX_PERMISSION = "staff.";
 	private Staff plugin;
 
-	public CommandStaffExecutor(Staff plugin) {
+	public CommandReportExecutor(Staff plugin) {
 		this.plugin = plugin;
 	}
 
@@ -27,23 +28,26 @@ public class CommandStaffExecutor implements CommandExecutor {
 			return true;
 		}
 		Player p = (Player) sender;
-		if (commandLabel.equalsIgnoreCase("staff") && args.length == 0) {
-			this.plugin.toggleStaffMod(p);
-			return true;
-		} else if (commandLabel.equalsIgnoreCase("staff") && args.length == 1) {
-			if (args[0].equalsIgnoreCase("list")) {
-				if (!p.hasPermission(PREFIX_PERMISSION + "list")) {
-					p.sendMessage(ChatColor.RED + permissionErrMessage());
+		if (commandLabel.equalsIgnoreCase("report")) {
+			if (args.length == 1) {
+				Player reported = Bukkit.getPlayer(args[0]);
+				if (reported == null) {
+					p.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.RED + "Joueur " + args[0] + " introuvable ...");
 					return true;
 				}
-				new Menu(p, MenuType.STAFFLIST, this.plugin, 1);
+				// TODO
 				return true;
-			} else if (args[0].equalsIgnoreCase("reports")) {
-				if (!p.hasPermission(PREFIX_PERMISSION + "reports")) {
-					p.sendMessage(ChatColor.RED + permissionErrMessage());
+			} else if (args.length >= 2) {
+				Player reported = Bukkit.getPlayer(args[0]);
+				if (reported == null) {
+					p.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.RED + "Joueur " + args[0] + " introuvable ...");
 					return true;
 				}
-				new Menu(p, MenuType.REPORTLIST, this.plugin, 1);
+				String reason = "";
+				for (int i = 1; i < args.length; i++) {
+					reason += args[i] + " ";
+				}
+				plugin.newReport(p, reported, reason);
 				return true;
 			}
 		}

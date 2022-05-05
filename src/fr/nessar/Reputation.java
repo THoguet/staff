@@ -2,6 +2,7 @@ package fr.nessar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.bukkit.entity.Player;
 
@@ -26,7 +27,7 @@ public class Reputation {
 	public static List<Report> getReportsFrom(Player p, List<Report> reports) {
 		List<Report> ret = new ArrayList<>();
 		for (Report report : reports) {
-			if (report.getReporter().getUniqueId().equals(p.getUniqueId())) {
+			if (UUID.fromString(report.getReporter().getUniqueId()).equals(p.getUniqueId())) {
 			}
 			ret.add(report);
 		}
@@ -38,7 +39,7 @@ public class Reputation {
 		for (Report report : reports) {
 			if (report.isTicket())
 				continue;
-			if (report.getReported().getUniqueId().equals(p.getUniqueId())) {
+			if (UUID.fromString(report.getReported().getUniqueId()).equals(p.getUniqueId())) {
 				ret.add(report);
 			}
 		}

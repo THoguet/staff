@@ -21,6 +21,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
@@ -37,9 +38,9 @@ public class Staff extends JavaPlugin implements Listener {
             + ChatColor.RESET;
     private static String REPORT_PREFIX = ChatColor.GRAY + "[" + ChatColor.GOLD + "Report" + ChatColor.GRAY + "] "
             + ChatColor.RESET;
-    private List<Report> reports;
-    private List<Template> templates;
-    private List<Punishment> punishments;
+    private List<Report> reports = null;
+    private List<Template> templates = null;
+    private List<Punishment> punishments = null;
     private List<StaffMod> inStaffMod;
     private List<Froze> frozen;
     private List<Menu> openMenu;
@@ -49,6 +50,10 @@ public class Staff extends JavaPlugin implements Listener {
     public void onEnable() {
         this.getConfig().options().copyDefaults();
         this.saveDefaultConfig();
+        this.inStaffMod = new ArrayList<StaffMod>();
+        this.frozen = new ArrayList<Froze>();
+        this.openMenu = new ArrayList<Menu>();
+        this.staffList = new ArrayList<OfflinePlayer>();
         if (this.getConfig().getBoolean("tpWorldSpawnWhenDCinStaffMod")) {
             this.tpHereWhenDcInStaffMod = Bukkit.getWorld("world").getSpawnLocation();
         } else {
@@ -68,15 +73,21 @@ public class Staff extends JavaPlugin implements Listener {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
-        this.inStaffMod = new ArrayList<StaffMod>();
-        this.frozen = new ArrayList<Froze>();
-        this.openMenu = new ArrayList<Menu>();
-        this.staffList = new ArrayList<OfflinePlayer>();
+        for (Report r : reports) {
+            Bukkit.getConsoleSender().sendMessage(r.getReportReason());
+        }
+        for (Template t : templates) {
+            Bukkit.getConsoleSender().sendMessage(t.getName());
+        }
+        for (Punishment punish : punishments) {
+            Bukkit.getConsoleSender().sendMessage(punish.getMessage());
+        }
         new UpdateStaffPerm(this).runTaskTimerAsynchronously(this, 0, 200);
         setupPermissions();
         getCommand("staff").setExecutor(new CommandStaffExecutor(this));
         getCommand("freeze").setExecutor(new CommandFreezeExecutor(this));
         getCommand("unfreeze").setExecutor(new CommandFreezeExecutor(this));
+        getCommand("report").setExecutor(new CommandReportExecutor(this));
         // getCommand("staff").setTabCompleter(new StaffTabCompletion(this));
         Bukkit.getServer().getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Loaded.");
         getServer().getPluginManager().registerEvents(this, this);
@@ -96,29 +107,37 @@ public class Staff extends JavaPlugin implements Listener {
                 toggleFreeze(froze.getFrozenPlayer());
         }
         Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "UnFreeze All players");
-        try {
-            for (Report report : this.reports) {
-                Database.addReportToDB(report);
+        if (this.reports != null) {
+            try {
+                for (Report report : this.reports) {
+                    Database.addReportToDB(report);
+                }
+                Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Reports saved.");
+            } catch (SQLException e) {
+                Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Reports cannot be saved.");
             }
-            Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Reports saved.");
-        } catch (SQLException e) {
-            Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Reports cannot be saved.");
         }
-        try {
-            for (Template template : this.templates) {
-                Database.addTemplateToDB(template);
+        if (this.templates != null) {
+            try {
+                for (Template template : this.templates) {
+                    Database.addTemplateToDB(template);
+                }
+                Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Templates saved.");
+            } catch (SQLException e) {
+                Bukkit.getConsoleSender()
+                        .sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Templates cannot be saved.");
             }
-            Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Templates saved.");
-        } catch (SQLException e) {
-            Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Templates cannot be saved.");
         }
-        try {
-            for (Punishment punishment : this.punishments) {
-                Database.addPunishmentToDB(punishment);
+        if (this.punishments != null) {
+            try {
+                for (Punishment punishment : this.punishments) {
+                    Database.addPunishmentToDB(punishment);
+                }
+                Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Punishments saved.");
+            } catch (SQLException e) {
+                Bukkit.getConsoleSender()
+                        .sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Punishments cannot be saved.");
             }
-            Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Punishments saved.");
-        } catch (SQLException e) {
-            Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Punishments cannot be saved.");
         }
         Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Unloaded.");
     }
@@ -146,11 +165,13 @@ public class Staff extends JavaPlugin implements Listener {
         try {
             Database.addReportToDB(freshReport);
         } catch (SQLException e) {
-            reporter.sendMessage(REPORT_PREFIX + "Votre report n'a pas pu être pris en compte désolé.");
+            reporter.sendMessage(
+                    REPORT_PREFIX + ChatColor.RED + "Votre report n'a pas pu être pris en compte désolé." + e);
             Bukkit.getConsoleSender().sendMessage(
-                    REPORT_PREFIX + ChatColor.RED + "Ajout a la DB impossible, report non pris en compte.");
+                    REPORT_PREFIX + ChatColor.RED + "Ajout a la DB impossible, report non pris en compte." + e);
             return;
         }
+        reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre report a bien été prit en compte !");
         this.reports.add(freshReport);
     }
 
@@ -346,7 +367,8 @@ public class Staff extends JavaPlugin implements Listener {
         Player p = event.getPlayer();
         int indexStaffMod = isInStaffMod(p);
         if (indexStaffMod != -1) {
-            if (event.getItem().getItemMeta().getDisplayName().equals(
+            ItemStack item = event.getItem();
+            if (item != null && item.getItemMeta().getDisplayName().equals(
                     ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off")
                     || inStaffMod.get(indexStaffMod).isStaffInv()) {
                 event.setCancelled(true);
@@ -361,8 +383,9 @@ public class Staff extends JavaPlugin implements Listener {
         int indexStaffMod = isInStaffMod(p);
         if (indexStaffMod != -1) {
             event.setCancelled(true);
-            if (p.getItemInHand().getType().equals(Material.ICE)
-                    || p.getItemInHand().getType().equals(Material.PACKED_ICE)) {
+            ItemStack item = p.getItemInHand();
+            if (item != null && item.getType().equals(Material.ICE)
+                    || item.getType().equals(Material.PACKED_ICE)) {
                 if (event.getRightClicked() instanceof Player) {
                     Player target = (Player) event.getRightClicked();
                     this.toggleFreeze(target);

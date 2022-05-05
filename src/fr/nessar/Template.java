@@ -18,7 +18,7 @@ public class Template {
 	}
 
 	public Template(String item, String name, String message, int pType, long duration) {
-		new Template(Material.getMaterial(item), name, message, PunishType.valueOf(pType), duration);
+		this(Material.getMaterial(item), name, message, PunishType.valueOf(pType), duration);
 	}
 
 	public Material getItem() {
