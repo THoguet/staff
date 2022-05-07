@@ -2,11 +2,13 @@ package fr.nessar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -18,7 +20,6 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
@@ -27,30 +28,45 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import net.md_5.bungee.api.ChatColor;
+import net.minecraft.server.v1_8_R3.NBTTagCompound;
+import net.minecraft.server.v1_8_R3.NBTTagList;
 
 public class Menu implements Listener {
 
 	private Player user;
 	private MenuType menuType;
 	private Staff plugin;
+	private int indexMenu;
 
-	public Menu(Player p, MenuType menuType, Staff plugin) {
+	public Menu(Player p, MenuType menuType, Staff plugin, int indexOpenMenu) {
 		this.user = p;
+		this.indexMenu = indexOpenMenu;
 		this.menuType = menuType;
 		this.plugin = plugin;
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 		this.user.openInventory(getInv(-1));
 	}
 
-	public Menu(Player p, MenuType menuType, Staff plugin, int page) {
+	public Menu(Player p, MenuType menuType, Staff plugin, int page, int indexOpenMenu) {
 		this.user = p;
+		this.indexMenu = indexOpenMenu;
 		this.menuType = menuType;
 		this.plugin = plugin;
 		plugin.getServer().getPluginManager().registerEvents(this, plugin);
 		this.user.openInventory(getInv(page));
 	}
 
+	public Menu(Player p, MenuType menuType, Staff plugin, Report r, int index, int indexOpenMenu) {
+		this.user = p;
+		this.indexMenu = indexOpenMenu;
+		this.menuType = menuType;
+		this.plugin = plugin;
+		plugin.getServer().getPluginManager().registerEvents(this, plugin);
+		this.user.openInventory(getInv(r, index));
+	}
+
 	public void closeMenu() {
+		plugin.removeOpenMenu(this.indexMenu);
 		Player toClose = this.user;
 		this.user = null;
 		toClose.closeInventory();
@@ -66,8 +82,6 @@ public class Menu implements Listener {
 				return getReports(page);
 			case STAFFLIST:
 				return getStaff(page);
-			case INREPORT:
-				return null;
 			case EDITSTATUS:
 				return null;
 			case ARCHIVES:
@@ -80,6 +94,15 @@ public class Menu implements Listener {
 				return null;
 			case NEWTEMPLATE:
 				return null;
+			default:
+				return null;
+		}
+	}
+
+	public Inventory getInv(Report r, int index) {
+		switch (this.menuType) {
+			case INREPORT:
+				return getEditReport(r, index);
 			default:
 				return null;
 		}
@@ -113,7 +136,7 @@ public class Menu implements Listener {
 
 	private Inventory getBase(boolean report, int page, String completeName) {
 		Inventory gui = Bukkit.createInventory(null, 54,
-				this.menuType.getMenuName(false) + completeName + (page != -1 ? String.valueOf(page) : ""));
+				this.menuType.getMenuName(report) + completeName + (page != -1 ? String.valueOf(page) : ""));
 		List<ItemStack> listItem = new ArrayList<>();
 		for (int i = 0; i < 54; i++) {
 			listItem.add(new ItemStack(Material.AIR));
@@ -174,6 +197,19 @@ public class Menu implements Listener {
 		return gui;
 	}
 
+	public ItemStack getReportItem(Report r, int i) {
+		List<String> itemLore = r.getLore();
+		ItemStack itemReport;
+		if (r.isReport())
+			itemReport = StaffMod.setNameItem(ChatColor.RED + "Report " + ChatColor.GRAY + "#" + i,
+					new ItemStack(Material.PAPER));
+		else
+			itemReport = StaffMod.setNameItem(ChatColor.BLUE + "Ticket " + ChatColor.GRAY + "#" + i,
+					new ItemStack(Material.EMPTY_MAP));
+		itemReport = StaffMod.setLoreitem(itemLore, itemReport);
+		return itemReport;
+	}
+
 	public Inventory getReports(int page) {
 		boolean permReport = false;
 		boolean permTicket = false;
@@ -194,7 +230,6 @@ public class Menu implements Listener {
 		}
 		Inventory gui = getBase(permReport, page);
 		gui.setItem(4, StaffMod.setNameItem(ChatColor.GOLD + nameReportsOrTickets, reportOrTickets));
-
 		ItemStack archives = StaffMod.setNameItem(ChatColor.GOLD + "Archives", new ItemStack(Material.BOOKSHELF));
 		gui.setItem(8, archives);
 		for (int i = 28 * (page - 1); i < reportsList.size() && i < 28 * page; i++) {
@@ -202,17 +237,103 @@ public class Menu implements Listener {
 			if (report.isReport() != permReport && report.isTicket() != permTicket)
 				continue;
 			int caseNumber = 18 + i - (28 * (page - 1));
-			List<String> itemLore = report.getLore();
-			ItemStack itemReport;
-			if (report.isReport())
-				itemReport = StaffMod.setNameItem(ChatColor.RED + "Report " + ChatColor.GRAY + "#" + i,
-						new ItemStack(Material.PAPER));
-			else
-				itemReport = StaffMod.setNameItem(ChatColor.BLUE + "Ticket " + ChatColor.GRAY + "#" + i,
-						new ItemStack(Material.EMPTY_MAP));
-			itemReport = StaffMod.setLoreitem(itemLore, itemReport);
+			ItemStack itemReport = getReportItem(report, i);
+			if (report.getStatus() != ReportStatus.WAITING)
+				itemReport = addGlow(itemReport);
 			gui.setItem(caseNumber, itemReport);
 		}
+		return gui;
+	}
+
+	public String getConnectionStr(String name) {
+		return ChatColor.GRAY + "("
+				+ (Bukkit.getPlayer(name) != null ? ChatColor.GREEN + "connecté" : ChatColor.RED + "déconnecté")
+				+ ChatColor.GRAY + ")";
+	}
+
+	public ItemStack getReportHead(boolean reporter, String name, boolean report, UUID playerUUID) {
+		ItemStack head = getPlayerHead(name);
+		head = StaffMod.setNameItem(ChatColor.GRAY + "Signalé: "
+				+ (reporter ? ChatColor.GREEN : ChatColor.RED) + name + " " + getConnectionStr(name), head);
+		List<String> lore = new ArrayList<>();
+		lore.add(ChatColor.GRAY + "Réputation: "
+				+ Reputation.getRepStr(playerUUID, plugin.getReports(), plugin.getPunishments()));
+		lore.add(
+				ChatColor.GRAY + "Signalments effectués: " + ChatColor.BLUE
+						+ Reputation.getReportsFrom(playerUUID, plugin.getReports()).size());
+		lore.add(ChatColor.GRAY + "Signalments reçus: " + ChatColor.BLUE
+				+ Reputation.getReportOf(playerUUID, plugin.getReports()).size());
+		lore.add(" ");
+		lore.add(ChatColor.GOLD + "Clic gauche " + ChatColor.GRAY
+				+ "pour vous téléporter à la position actuelle du joueur " + ChatColor.YELLOW + name);
+		lore.add(ChatColor.GOLD + "Clic droit " + ChatColor.GRAY
+				+ "pour vous téléporter à l'ancienne position du joueur " + ChatColor.YELLOW + name);
+		head = StaffMod.setLoreitem(lore, head);
+		return head;
+	}
+
+	public ItemStack getSavedData(Report r) {
+		ItemStack data = StaffMod.setNameItem(ChatColor.YELLOW + "Données collectées",
+				new ItemStack(Material.ENCHANTED_BOOK));
+		List<String> lore = new ArrayList<>();
+		lore.add(ChatColor.YELLOW + "Signaleur: " + ChatColor.RED + r.getReported().getName()
+				+ " " + getConnectionStr(r.getReported().getName()));
+		lore.add(
+				ChatColor.GRAY + "  Gamemode: " + ChatColor.BLUE + r.getReported().getGamemodeStr() + ChatColor.GRAY
+						+ ", Au sol: "
+						+ (r.getReported().isFlying() ? ChatColor.RED + "non" : ChatColor.GREEN + "oui"));
+		lore.add(ChatColor.GRAY + "  Sneak: "
+				+ (r.getReported().isSneaking() ? ChatColor.RED + "non" : ChatColor.GREEN + "oui") + ChatColor.GRAY
+				+ ", Sprint: " + (r.getReported().isSprinting() ? ChatColor.RED + "non" : ChatColor.GREEN + "oui"));
+		lore.add(ChatColor.GRAY + "  Vie: " + ChatColor.RED + r.getReported().getHealth() + "/"
+				+ r.getReported().getMaxhealth() + ChatColor.GRAY + ", Nourriture: " + ChatColor.GOLD
+				+ r.getReported().getFood());
+		lore.add(ChatColor.GRAY + "  UUID: " + ChatColor.DARK_GRAY + r.getReported().getUniqueId());
+		lore.add(ChatColor.GRAY + "  IP: " + ChatColor.YELLOW + r.getReported().getIp());
+		lore.add(" ");
+		lore.add(ChatColor.YELLOW + "Signaleur: " + ChatColor.GREEN + r.getReporter().getName()
+				+ " " + getConnectionStr(r.getReporter().getName()));
+		lore.add(ChatColor.GRAY + "  UUID: " + ChatColor.DARK_GRAY + r.getReporter().getUniqueId());
+		lore.add(ChatColor.GRAY + "  IP: " + ChatColor.YELLOW + r.getReporter().getIp());
+		lore.add("  ");
+		lore.add(ChatColor.GOLD + "Clic gauche" + ChatColor.GRAY + " pour afficher l'historique des messages.");
+		data = StaffMod.setLoreitem(lore, data);
+		return data;
+	}
+
+	public Inventory getEditReport(Report r, int index) {
+		Inventory gui = getBase(r.isReport(), -1, String.valueOf(index));
+		ItemStack backToReportList = StaffMod.setNameItem(ChatColor.GOLD + "Liste des reports",
+				new ItemStack(Material.BOOKSHELF));
+		gui.setItem(0, backToReportList);
+		ItemStack reportitem = getReportItem(r, index);
+		gui.setItem(4, reportitem);
+		gui.setItem(18, reportitem);
+		ItemStack reporterHead = getReportHead(true, r.getReporter().getName(), r.isReport(),
+				UUID.fromString(r.getReporter().getUniqueId()));
+		gui.setItem(21, reporterHead);
+		ItemStack abusiveReport = StaffMod.setNameItem(ChatColor.YELLOW + "Signalement abusif",
+				new ItemStack(Material.GOLD_AXE));
+		List<String> lore = new ArrayList<>();
+		lore.add(ChatColor.GOLD + "Clic" + ChatColor.GRAY
+				+ " pour sanctionner le joueur ayant envoyé ce report: " + ChatColor.GREEN + r.getReporter().getName());
+		abusiveReport = StaffMod.setLoreitem(lore, abusiveReport);
+		gui.setItem(22, abusiveReport);
+		ItemStack reportedHead = getReportHead(false, r.getReported().getName(), r.isReport(),
+				UUID.fromString(r.getReported().getUniqueId()));
+		gui.setItem(23, reportedHead);
+		ItemStack data = getSavedData(r);
+		gui.setItem(26, data);
+		ItemStack waiting = new ItemStack(Material.STAINED_CLAY, 1, (byte) 3);
+		ItemStack inProgress = new ItemStack(Material.STAINED_CLAY, 1, (byte) 4);
+		ItemStack important = new ItemStack(Material.STAINED_CLAY, 1, (byte) 14);
+		ItemStack classed = new ItemStack(Material.STAINED_CLAY, 1, (byte) 9);
+		ItemStack delete = new ItemStack(Material.FLINT_AND_STEEL);
+		gui.setItem(29, waiting);
+		gui.setItem(30, inProgress);
+		gui.setItem(31, important);
+		gui.setItem(32, classed);
+		gui.setItem(33, delete);
 		return gui;
 	}
 
@@ -221,7 +342,6 @@ public class Menu implements Listener {
 	}
 
 	public void interactItem(InventoryClickEvent event) {
-		List<OfflinePlayer> staffList = this.plugin.getStaff();
 		int caseNumber = -999;
 		caseNumber = event.getRawSlot();
 		ItemStack item = event.getCurrentItem();
@@ -233,13 +353,31 @@ public class Menu implements Listener {
 				event.setCancelled(true);
 				break;
 			case STAFFLIST:
+				List<OfflinePlayer> staffList = this.plugin.getStaff();
 				int indexStaffList = caseNumber - 18;
 				if (indexStaffList >= 0 && indexStaffList < staffList.size()) {
 					Player p = staffList.get(indexStaffList).getPlayer();
 					if (p != null) {
 						this.user.sendMessage(Staff.getSTAFF_PREFIX() + "Vous avez bien été TP.");
 						this.user.teleport(p.getLocation());
+						break;
 					}
+				}
+			case REPORTLIST:
+				List<Report> reports = plugin.getReports();
+				int indexReportList = caseNumber - 18;
+				if (indexReportList >= 0 && indexReportList < reports.size()) {
+					plugin.addOpenMenu(new Menu(this.user, MenuType.INREPORT, this.plugin, reports.get(indexReportList),
+							indexReportList, plugin.sizeOpenMenu() - 1));
+					this.user = null;
+					break;
+				}
+			case INREPORT:
+				if (caseNumber == 0) {
+					plugin.addOpenMenu(
+							new Menu(this.user, MenuType.REPORTLIST, this.plugin, 1, plugin.sizeOpenMenu() - 1));
+					this.user = null;
+					break;
 				}
 			default:
 				if (caseNumber >= 0 && caseNumber < 54) {
@@ -258,6 +396,21 @@ public class Menu implements Listener {
 		itemM.setOwner(name);
 		skull.setItemMeta(itemM);
 		return skull;
+	}
+
+	public static ItemStack addGlow(ItemStack item) {
+		net.minecraft.server.v1_8_R3.ItemStack nmsStack = CraftItemStack.asNMSCopy(item);
+		NBTTagCompound tag = null;
+		if (!nmsStack.hasTag()) {
+			tag = new NBTTagCompound();
+			nmsStack.setTag(tag);
+		}
+		if (tag == null)
+			tag = nmsStack.getTag();
+		NBTTagList ench = new NBTTagList();
+		tag.set("ench", ench);
+		nmsStack.setTag(tag);
+		return CraftItemStack.asCraftMirror(nmsStack);
 	}
 
 	public void sendFrozeMessage(Player p) {
@@ -494,6 +647,7 @@ public class Menu implements Listener {
 						sendFrozeMessage(p);
 						break;
 					default:
+						Bukkit.broadcastMessage("event close");
 						this.closeMenu();
 						break;
 				}

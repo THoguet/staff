@@ -36,14 +36,14 @@ public class CommandStaffExecutor implements CommandExecutor {
 					p.sendMessage(ChatColor.RED + permissionErrMessage());
 					return true;
 				}
-				new Menu(p, MenuType.STAFFLIST, this.plugin, 1);
+				plugin.addOpenMenu(new Menu(p, MenuType.STAFFLIST, this.plugin, 1, plugin.sizeOpenMenu()));
 				return true;
 			} else if (args[0].equalsIgnoreCase("reports")) {
 				if (!p.hasPermission(PREFIX_PERMISSION + "reports")) {
 					p.sendMessage(ChatColor.RED + permissionErrMessage());
 					return true;
 				}
-				new Menu(p, MenuType.REPORTLIST, this.plugin, 1);
+				plugin.addOpenMenu(new Menu(p, MenuType.REPORTLIST, this.plugin, 1, plugin.sizeOpenMenu()));
 				return true;
 			}
 		}

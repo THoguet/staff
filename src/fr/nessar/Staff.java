@@ -107,38 +107,6 @@ public class Staff extends JavaPlugin implements Listener {
                 toggleFreeze(froze.getFrozenPlayer());
         }
         Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "UnFreeze All players");
-        if (this.reports != null) {
-            try {
-                for (Report report : this.reports) {
-                    Database.addReportToDB(report);
-                }
-                Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Reports saved.");
-            } catch (SQLException e) {
-                Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Reports cannot be saved.");
-            }
-        }
-        if (this.templates != null) {
-            try {
-                for (Template template : this.templates) {
-                    Database.addTemplateToDB(template);
-                }
-                Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Templates saved.");
-            } catch (SQLException e) {
-                Bukkit.getConsoleSender()
-                        .sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Templates cannot be saved.");
-            }
-        }
-        if (this.punishments != null) {
-            try {
-                for (Punishment punishment : this.punishments) {
-                    Database.addPunishmentToDB(punishment);
-                }
-                Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Punishments saved.");
-            } catch (SQLException e) {
-                Bukkit.getConsoleSender()
-                        .sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Punishments cannot be saved.");
-            }
-        }
         Bukkit.getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.RED + "Unloaded.");
     }
 
@@ -196,6 +164,18 @@ public class Staff extends JavaPlugin implements Listener {
         return this.reports.size();
     }
 
+    public void openNewMenu(Player p, MenuType menuType, int page) {
+        this.openMenu.add(new Menu(p, menuType, this, page));
+    }
+
+    public void openNewMenu(Player p, MenuType menuType, Report r, int index) {
+        this.openMenu.add(new Menu(p, menuType, this, r, index, this.openMenu.size()));
+    }
+
+    public void openNewMenu(Player p, MenuType menuType) {
+        this.openMenu.add(new Menu(p, menuType, this, this.openMenu.size()));
+    }
+
     public int getNbReport(ReportStatus status, int classed, int report) {
         int ret = 0;
         boolean want_only_ticket = report == 0;
@@ -241,19 +221,37 @@ public class Staff extends JavaPlugin implements Listener {
         return -1;
     }
 
+    public int sizeOpenMenu() {
+        return this.openMenu.size();
+    }
+
+    public void removeOpenMenu(int index) {
+        Bukkit.broadcastMessage("remove");
+        this.openMenu.remove(index);
+    }
+
+    public void addOpenMenu(Menu toAdd) {
+        Bukkit.broadcastMessage("add");
+        this.openMenu.add(toAdd);
+        Bukkit.broadcastMessage("" + this.openMenu.size());
+    }
+
+    public void setOpenMenu(int index, Menu toAdd) {
+        this.openMenu.set(index, toAdd);
+    }
+
     public void toggleFreeze(Player p) {
         int indexFroze = isFrozen(p);
         if (indexFroze != -1) {
             Froze toload = this.frozen.get(indexFroze);
-            this.openMenu.get(toload.indexOpenMenu).closeMenu();
-            this.openMenu.remove(toload.indexOpenMenu);
+            this.openMenu.get(toload.getIndexOpenMenu()).closeMenu();
             this.frozen.remove(indexFroze);
             p.removePotionEffect(PotionEffectType.SLOW);
             toload.loadInv();
         } else {
-            this.openMenu.add(new Menu(p, MenuType.FREEZE, this));
+            this.openMenu.add(new Menu(p, MenuType.FREEZE, this, this.openMenu.size()));
             this.frozen.add(new Froze(p, this.openMenu.size() - 1));
-            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 99999, 255, true, true));
+            p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 99999, 255, true, false));
         }
     }
 
@@ -396,6 +394,10 @@ public class Staff extends JavaPlugin implements Listener {
 
     public List<Report> getReports() {
         return this.reports;
+    }
+
+    public List<Punishment> getPunishments() {
+        return this.punishments;
     }
 
     public static String getSTAFF_PREFIX() {

@@ -8,11 +8,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
 public class Database {
 	public static Connection getConnection() {
@@ -36,9 +34,9 @@ public class Database {
 			Connection connection = Database.getConnection();
 			Statement statement = connection.createStatement();
 			statement.execute(
-					"CREATE TABLE IF NOT EXISTS reports(ID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, report BOOLEAN, reportStatus TINYINT, reportTime BIGINT, reportReason VARCHAR(256), reported JAVA_OBJECT, reporter JAVA_OBJECT);");
+					"CREATE TABLE IF NOT EXISTS reports(id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, report BOOLEAN, reportStatus TINYINT, reportTime BIGINT, reportReason VARCHAR(256), reported JAVA_OBJECT, reporter JAVA_OBJECT);");
 			statement.execute(
-					"CREATE TABLE IF NOT EXISTS chatHistory(messageId INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, messageDate BIGINT, messageAuthor UUID, message VARCHAR(256));");
+					"CREATE TABLE IF NOT EXISTS chatHistory(id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, messageDate BIGINT, messageAuthor UUID, message VARCHAR(256));");
 			statement.execute(
 					"CREATE TABLE IF NOT EXISTS templates(id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, templateName VARCHAR(32), message VARCHAR(256), duration BIGINT, type TINYINT, itemName VARCHAR(64));");
 			statement.execute(
@@ -150,23 +148,11 @@ public class Database {
 		PreparedStatement statement;
 		statement = conn.prepareStatement(
 				"INSERT INTO templates(templateName,message,duration,type,itemName) VALUES (?,?,?,?,?)");
-		statement.setString(0, template.getName());
-		statement.setString(1, template.getMessage());
-		statement.setLong(2, template.getDuration());
-		statement.setInt(3, template.getpType().getPunishCode());
-		statement.setString(4, template.getItem().toString());
-		statement.execute();
-		conn.close();
-	}
-
-	public static void addChatMessageToDB(ChatMessage chat) throws SQLException {
-		Connection conn = Database.getConnection();
-		PreparedStatement statement;
-		statement = conn.prepareStatement(
-				"INSERT INTO chatHistory(messageDate,messageAuthor,message) VALUES (?,?,?)");
-		statement.setLong(0, chat.getMessageDate());
-		statement.setObject(1, chat.getAuthorUUID());
-		statement.setString(2, chat.getMessage());
+		statement.setString(1, template.getName());
+		statement.setString(2, template.getMessage());
+		statement.setLong(3, template.getDuration());
+		statement.setInt(4, template.getpType().getPunishCode());
+		statement.setString(5, template.getItem().toString());
 		statement.execute();
 		conn.close();
 	}
@@ -176,13 +162,103 @@ public class Database {
 		PreparedStatement statement;
 		statement = conn.prepareStatement(
 				"INSERT INTO punishments(punishedUUID,message,punishmentType,endtime,startTime, punisherUUID,reportID) VALUES (?,?,?,?,?,?,?)");
-		statement.setObject(0, punishment.getPunishedUUID());
-		statement.setString(1, punishment.getMessage());
-		statement.setInt(2, punishment.getpType().getPunishCode());
-		statement.setLong(3, punishment.getEndTime());
-		statement.setLong(4, punishment.getStartTime());
-		statement.setObject(5, punishment.getPunisherUUID());
-		statement.setInt(6, punishment.getReportID());
+		statement.setObject(1, punishment.getPunishedUUID());
+		statement.setString(2, punishment.getMessage());
+		statement.setInt(3, punishment.getpType().getPunishCode());
+		statement.setLong(4, punishment.getEndTime());
+		statement.setLong(5, punishment.getStartTime());
+		statement.setObject(6, punishment.getPunisherUUID());
+		statement.setInt(7, punishment.getReportID());
+		statement.execute();
+		conn.close();
+	}
+
+	public static void addChatMessageToDB(ChatMessage chat) throws SQLException {
+		Connection conn = Database.getConnection();
+		PreparedStatement statement;
+		statement = conn.prepareStatement(
+				"INSERT INTO chatHistory(messageDate,messageAuthor,message) VALUES (?,?,?)");
+		statement.setLong(1, chat.getMessageDate());
+		statement.setObject(2, chat.getAuthorUUID());
+		statement.setString(3, chat.getMessage());
+		statement.execute();
+		conn.close();
+	}
+
+	public static void updateReport(Report r, int index) throws SQLException {
+		Connection conn = Database.getConnection();
+		PreparedStatement statement;
+		statement = conn.prepareStatement(
+				"UPDATE reports SET report = ?, reportStatus = ?, reportTime = ?, reportReason = ?, reported = ?, reporter = ? WHERE id = ?");
+		statement.setBoolean(1, r.isReport());
+		statement.setInt(2, r.getStatus().getStatusCode());
+		statement.setLong(3, r.getReportTime());
+		statement.setString(4, r.getReportReason());
+		statement.setObject(5, r.getReported());
+		statement.setObject(6, r.getReporter());
+		statement.setInt(7, index);
+		statement.execute();
+		conn.close();
+	}
+
+	public static void updateTemplate(Template template, int index) throws SQLException {
+		Connection conn = Database.getConnection();
+		PreparedStatement statement;
+		statement = conn.prepareStatement(
+				"UPDATE templates SET templateName = ?, message = ?, duration = ?, type = ?, itemName = ? WHERE id = ?");
+		statement.setString(1, template.getName());
+		statement.setString(2, template.getMessage());
+		statement.setLong(3, template.getDuration());
+		statement.setInt(4, template.getpType().getPunishCode());
+		statement.setString(5, template.getItem().toString());
+		statement.setInt(6, index);
+		statement.execute();
+		conn.close();
+	}
+
+	public static void updatePunishment(Punishment punishment, int index) throws SQLException {
+		Connection conn = Database.getConnection();
+		PreparedStatement statement;
+		statement = conn.prepareStatement(
+				"UPDATE punishments SET punishedUUID = ?, message = ?, punishmentType = ?, endtime = ?, startTime = ?, punisherUUID = ?, reportID = ? WHERE id = ?");
+		statement.setObject(1, punishment.getPunishedUUID());
+		statement.setString(2, punishment.getMessage());
+		statement.setInt(3, punishment.getpType().getPunishCode());
+		statement.setLong(4, punishment.getEndTime());
+		statement.setLong(5, punishment.getStartTime());
+		statement.setObject(6, punishment.getPunisherUUID());
+		statement.setInt(7, punishment.getReportID());
+		statement.setInt(8, index);
+		statement.execute();
+		conn.close();
+	}
+
+	public static void deleteReport(int index) throws SQLException {
+		Connection conn = Database.getConnection();
+		PreparedStatement statement;
+		statement = conn.prepareStatement(
+				"DELETE FROM reports WHERE id = ?");
+		statement.setInt(1, index);
+		statement.execute();
+		conn.close();
+	}
+
+	public static void deleteTemplate(int index) throws SQLException {
+		Connection conn = Database.getConnection();
+		PreparedStatement statement;
+		statement = conn.prepareStatement(
+				"DELETE FROM templates WHERE id = ?");
+		statement.setInt(1, index);
+		statement.execute();
+		conn.close();
+	}
+
+	public static void deletePunishment(int index) throws SQLException {
+		Connection conn = Database.getConnection();
+		PreparedStatement statement;
+		statement = conn.prepareStatement(
+				"DELETE FROM punishments WHERE id = ?");
+		statement.setInt(1, index);
 		statement.execute();
 		conn.close();
 	}

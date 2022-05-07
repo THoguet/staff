@@ -1,26 +1,36 @@
 package fr.nessar;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.UUID;
 
-public class PlayerSave {
-	String ip;
-	boolean isAllowFlight;
-	String displayName;
-	String name;
-	float exhaustion;
-	float flyspeed;
-	float walkspeed;
-	boolean isflying;
-	boolean isSneaking;
-	boolean isSprinting;
-	double health;
-	double maxhealth;
-	int xp;
-	// Collection<PotionEffect> potionEffects;
-	int gamemode;
-	int food;
-	String playeruuid;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+
+public class PlayerSave implements Serializable {
+	private String ip;
+	private boolean isAllowFlight;
+	private String displayName;
+	private String name;
+	private float exhaustion;
+	private float flyspeed;
+	private float walkspeed;
+	private boolean isflying;
+	private boolean isSneaking;
+	private boolean isSprinting;
+	private double health;
+	private double maxhealth;
+	private int xp;
+	private Collection<PotionEffect> potionEffects;
+	private int gamemode;
+	private int food;
+	private String playeruuid;
+	private double x;
+	private double y;
+	private double z;
+	private String world;
 
 	public PlayerSave(Player p) {
 		this.ip = p.getAddress().toString();
@@ -36,14 +46,69 @@ public class PlayerSave {
 		this.health = p.getHealth();
 		this.maxhealth = p.getMaxHealth();
 		this.xp = p.getTotalExperience();
-		// this.potionEffects = p.getActivePotionEffects();
+		this.potionEffects = p.getActivePotionEffects();
 		this.gamemode = p.getGameMode().ordinal();
 		this.food = p.getFoodLevel();
 		this.playeruuid = p.getUniqueId().toString();
+		this.x = p.getLocation().getX();
+		this.y = p.getLocation().getY();
+		this.z = p.getLocation().getZ();
+		this.world = p.getLocation().getWorld().getName();
+	}
+
+	public String getGamemodeStr() {
+		switch (this.gamemode) {
+			case 0:
+				return "survie";
+			case 1:
+				return "créatif";
+			case 2:
+				return "Aventure";
+			case 3:
+				return "spéctateur";
+			default:
+				return "Inconnu";
+		}
 	}
 
 	public boolean isOnline() {
-		return Bukkit.getPlayer(this.playeruuid) != null;
+		return Bukkit.getPlayer(UUID.fromString(this.playeruuid)) != null;
+	}
+
+	public boolean isAllowFlight() {
+		return isAllowFlight;
+	}
+
+	public boolean isSneaking() {
+		return this.isSneaking;
+	}
+
+	public boolean isSprinting() {
+		return this.isSprinting;
+	}
+
+	public double getX() {
+		return this.x;
+	}
+
+	public double getY() {
+		return this.y;
+	}
+
+	public double getZ() {
+		return this.z;
+	}
+
+	public String getWorld() {
+		return this.world;
+	}
+
+	public Location getLocation() {
+		return new Location(Bukkit.getWorld(this.world), this.x, this.y, this.z);
+	}
+
+	public boolean isFlying() {
+		return this.isflying;
 	}
 
 	public String getDisplayName() {
@@ -86,9 +151,9 @@ public class PlayerSave {
 		return playeruuid;
 	}
 
-	// public Collection<PotionEffect> getPotionEffects() {
-	// return potionEffects;
-	// }
+	public Collection<PotionEffect> getPotionEffects() {
+		return potionEffects;
+	}
 
 	public float getWalkspeed() {
 		return walkspeed;

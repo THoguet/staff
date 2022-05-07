@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemStack;
 public class Froze {
 	private Player frozenPlayer;
 	private SaveInventory frozeInventory;
-	int indexOpenMenu;
+	private int indexOpenMenu;
 
 	public Froze(Player p, int indexOpenMenu) {
 		this.frozenPlayer = p;
