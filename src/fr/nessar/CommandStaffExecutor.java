@@ -6,6 +6,9 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import fr.nessar.Menu.ReportList;
+import fr.nessar.Menu.StaffList;
+
 public class CommandStaffExecutor implements CommandExecutor {
 
 	private static final String PREFIX_PERMISSION = "staff.";
@@ -36,14 +39,14 @@ public class CommandStaffExecutor implements CommandExecutor {
 					p.sendMessage(ChatColor.RED + permissionErrMessage());
 					return true;
 				}
-				plugin.addOpenMenu(new Menu(p, MenuType.STAFFLIST, this.plugin, 1, plugin.sizeOpenMenu()));
+				p.openInventory(new StaffList(1, plugin, p).getInventory());
 				return true;
 			} else if (args[0].equalsIgnoreCase("reports")) {
 				if (!p.hasPermission(PREFIX_PERMISSION + "reports")) {
 					p.sendMessage(ChatColor.RED + permissionErrMessage());
 					return true;
 				}
-				plugin.addOpenMenu(new Menu(p, MenuType.REPORTLIST, this.plugin, 1, plugin.sizeOpenMenu()));
+				p.openInventory(new ReportList(plugin, p, 1).getInventory());
 				return true;
 			}
 		}

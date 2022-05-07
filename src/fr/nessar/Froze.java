@@ -10,19 +10,13 @@ import org.bukkit.inventory.ItemStack;
 public class Froze {
 	private Player frozenPlayer;
 	private SaveInventory frozeInventory;
-	private int indexOpenMenu;
 
-	public Froze(Player p, int indexOpenMenu) {
+	public Froze(Player p) {
 		this.frozenPlayer = p;
 		this.frozeInventory = new SaveInventory(p);
-		this.indexOpenMenu = indexOpenMenu;
 		this.setRedPaneInv(p);
 		p.getInventory().setHeldItemSlot(0);
 		p.getInventory().setItemInHand(StaffMod.setNameItem(" ", new ItemStack(Material.PACKED_ICE)));
-	}
-
-	public int getIndexOpenMenu() {
-		return indexOpenMenu;
 	}
 
 	public SaveInventory getFrozeInventory() {

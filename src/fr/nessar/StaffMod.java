@@ -10,6 +10,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.Dye;
 
+import fr.nessar.Menu.ReportList;
+import fr.nessar.Menu.StaffList;
+import fr.nessar.Menu.Static;
+
 public class StaffMod {
 	private Player who;
 	private Staff plugin;
@@ -78,9 +82,9 @@ public class StaffMod {
 		if (m.equals(Material.INK_SACK))
 			toggleVanish();
 		else if (m.equals(Material.PAPER)) {
-			new Menu(who, MenuType.REPORTLIST, plugin, 1);
+			new ReportList(plugin, who, 1);
 		} else if (m.equals(Material.SKULL_ITEM)) {
-			new Menu(who, MenuType.STAFFLIST, plugin, 1);
+			new StaffList(1, plugin, who);
 		} else if (m.equals(Material.REDSTONE) || m.equals(Material.SULPHUR))
 			toggleImportant();
 		else if (m.equals(Material.TORCH) || m.equals(Material.LEVER) || m.equals(Material.REDSTONE_TORCH_ON))
@@ -116,7 +120,8 @@ public class StaffMod {
 			}
 			this.freeze = StaffMod.setNameItem(ChatColor.BLUE + "Freeze", new ItemStack(Material.ICE));
 			if (isSneaking) {
-				this.reportsOrStaff = setNameItem(ChatColor.GOLD + "Staff list", Menu.getPlayerHead("MHF_Herobrine"));
+				this.reportsOrStaff = setNameItem(ChatColor.GOLD + "Staff list",
+						Static.getPlayerHead("MHF_Herobrine"));
 			} else {
 				ReportStatus minimalStatus = ReportStatus.WAITING;
 				if (this.only_important) {

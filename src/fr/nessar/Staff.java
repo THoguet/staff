@@ -6,30 +6,17 @@ import java.util.List;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCreativeEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.inventory.InventoryInteractEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerPickupItemEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import fr.nessar.Menu.Freeze;
 import net.milkbowl.vault.permission.Permission;
 
-public class Staff extends JavaPlugin implements Listener {
+public class Staff extends JavaPlugin {
 
     private Permission perms = null;
     private Location tpHereWhenDcInStaffMod;
@@ -43,7 +30,6 @@ public class Staff extends JavaPlugin implements Listener {
     private List<Punishment> punishments = null;
     private List<StaffMod> inStaffMod;
     private List<Froze> frozen;
-    private List<Menu> openMenu;
     private List<OfflinePlayer> staffList;
 
     @Override
@@ -52,7 +38,6 @@ public class Staff extends JavaPlugin implements Listener {
         this.saveDefaultConfig();
         this.inStaffMod = new ArrayList<StaffMod>();
         this.frozen = new ArrayList<Froze>();
-        this.openMenu = new ArrayList<Menu>();
         this.staffList = new ArrayList<OfflinePlayer>();
         if (this.getConfig().getBoolean("tpWorldSpawnWhenDCinStaffMod")) {
             this.tpHereWhenDcInStaffMod = Bukkit.getWorld("world").getSpawnLocation();
@@ -89,8 +74,9 @@ public class Staff extends JavaPlugin implements Listener {
         getCommand("unfreeze").setExecutor(new CommandFreezeExecutor(this));
         getCommand("report").setExecutor(new CommandReportExecutor(this));
         // getCommand("staff").setTabCompleter(new StaffTabCompletion(this));
+        this.getServer().getPluginManager().registerEvents(new InventoryEvents(this), this);
+        this.getServer().getPluginManager().registerEvents(new PlayerEvent(this), this);
         Bukkit.getServer().getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Loaded.");
-        getServer().getPluginManager().registerEvents(this, this);
     }
 
     @Override
@@ -164,18 +150,6 @@ public class Staff extends JavaPlugin implements Listener {
         return this.reports.size();
     }
 
-    public void openNewMenu(Player p, MenuType menuType, int page) {
-        this.openMenu.add(new Menu(p, menuType, this, page));
-    }
-
-    public void openNewMenu(Player p, MenuType menuType, Report r, int index) {
-        this.openMenu.add(new Menu(p, menuType, this, r, index, this.openMenu.size()));
-    }
-
-    public void openNewMenu(Player p, MenuType menuType) {
-        this.openMenu.add(new Menu(p, menuType, this, this.openMenu.size()));
-    }
-
     public int getNbReport(ReportStatus status, int classed, int report) {
         int ret = 0;
         boolean want_only_ticket = report == 0;
@@ -221,175 +195,31 @@ public class Staff extends JavaPlugin implements Listener {
         return -1;
     }
 
-    public int sizeOpenMenu() {
-        return this.openMenu.size();
-    }
-
-    public void removeOpenMenu(int index) {
-        Bukkit.broadcastMessage("remove");
-        this.openMenu.remove(index);
-    }
-
-    public void addOpenMenu(Menu toAdd) {
-        Bukkit.broadcastMessage("add");
-        this.openMenu.add(toAdd);
-        Bukkit.broadcastMessage("" + this.openMenu.size());
-    }
-
-    public void setOpenMenu(int index, Menu toAdd) {
-        this.openMenu.set(index, toAdd);
-    }
-
     public void toggleFreeze(Player p) {
         int indexFroze = isFrozen(p);
         if (indexFroze != -1) {
             Froze toload = this.frozen.get(indexFroze);
-            this.openMenu.get(toload.getIndexOpenMenu()).closeMenu();
             this.frozen.remove(indexFroze);
             p.removePotionEffect(PotionEffectType.SLOW);
+            p.closeInventory();
             toload.loadInv();
         } else {
-            this.openMenu.add(new Menu(p, MenuType.FREEZE, this, this.openMenu.size()));
-            this.frozen.add(new Froze(p, this.openMenu.size() - 1));
+            this.frozen.add(new Froze(p));
+            p.openInventory(new Freeze().getInventory());
             p.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 99999, 255, true, false));
         }
     }
 
-    @EventHandler
-    public void onStaffQuit(PlayerQuitEvent event) {
-        Player p = event.getPlayer();
-        if (this.isInStaffMod(p) != -1) {
-            toggleStaffMod(p);
-            p.teleport(this.tpHereWhenDcInStaffMod);
-        }
+    public Location getLocToTp() {
+        return this.tpHereWhenDcInStaffMod;
     }
 
-    @EventHandler
-    public void onPlayerDrop(PlayerDropItemEvent event) {
-        Player p = event.getPlayer();
-        int indexStaffMod = isInStaffMod(p);
-        if (indexStaffMod != -1) {
-            if (inStaffMod.get(indexStaffMod).isStaffInv())
-                event.setCancelled(true);
-            else {
-                if (event.getItemDrop().getItemStack().getItemMeta().getDisplayName().equals(
-                        ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
-                    event.setCancelled(true);
-            }
-        }
+    public List<StaffMod> getInStaffMod() {
+        return this.inStaffMod;
     }
 
-    @EventHandler
-    public void onPlayerInventoryDragEvent(InventoryDragEvent event) {
-        Player p = (Player) event.getWhoClicked();
-        int indexStaffMod = isInStaffMod(p);
-        if (indexStaffMod != -1) {
-            if (inStaffMod.get(indexStaffMod).isStaffInv())
-                event.setCancelled(true);
-            else {
-                if (event.getOldCursor().getItemMeta().getDisplayName().equals(
-                        ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
-                    event.setCancelled(true);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPlayerInventoryDragEvent(PlayerPickupItemEvent event) {
-        Player p = (Player) event.getPlayer();
-        int indexStaffMod = isInStaffMod(p);
-        if (indexStaffMod != -1) {
-            if (inStaffMod.get(indexStaffMod).isStaffInv())
-                event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onPlayerSneaking(PlayerToggleSneakEvent event) {
-        Player p = event.getPlayer();
-        int indexStaffMod = isInStaffMod(p);
-        if (indexStaffMod != -1) {
-            inStaffMod.get(indexStaffMod).toggleSneakStatus();
-        }
-    }
-
-    @EventHandler
-    public void onPlayerInventoryInteractEvent(InventoryInteractEvent event) {
-        Player p = (Player) event.getWhoClicked();
-        int indexStaffMod = isInStaffMod(p);
-        if (indexStaffMod != -1) {
-            if (inStaffMod.get(indexStaffMod).isStaffInv())
-                event.setCancelled(true);
-            else {
-                if (!p.getInventory().getItem(8).getItemMeta().getDisplayName().equals(
-                        ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
-                    event.setCancelled(true);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPlayerInventoryCreativeEvent(InventoryCreativeEvent event) {
-        Player p = (Player) event.getWhoClicked();
-        int indexStaffMod = isInStaffMod(p);
-        if (indexStaffMod != -1) {
-            if (inStaffMod.get(indexStaffMod).isStaffInv())
-                event.setCancelled(true);
-            else {
-                if (event.getCurrentItem() != null && event.getCurrentItem().getItemMeta().getDisplayName()
-                        .equals(ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
-                    event.setCancelled(true);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPlayerInventoryClick(InventoryClickEvent event) {
-        if (event.getWhoClicked() instanceof Player) {
-            Player p = (Player) event.getWhoClicked();
-            int indexStaffMod = isInStaffMod(p);
-            if (indexStaffMod != -1) {
-                if (inStaffMod.get(indexStaffMod).isStaffInv())
-                    event.setCancelled(true);
-                else {
-                    if (event.getCurrentItem() != null && event.getCurrentItem().getItemMeta().getDisplayName().equals(
-                            ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
-                        event.setCancelled(true);
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPlayerPlayerInteractEvent(PlayerInteractEvent event) {
-        Player p = event.getPlayer();
-        int indexStaffMod = isInStaffMod(p);
-        if (indexStaffMod != -1) {
-            ItemStack item = event.getItem();
-            if (item != null && item.getItemMeta().getDisplayName().equals(
-                    ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off")
-                    || inStaffMod.get(indexStaffMod).isStaffInv()) {
-                event.setCancelled(true);
-                inStaffMod.get(indexStaffMod).toggleOrUseSlot(event.getMaterial());
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPlayerPlayerInteractEntityEvent(PlayerInteractEntityEvent event) {
-        Player p = event.getPlayer();
-        int indexStaffMod = isInStaffMod(p);
-        if (indexStaffMod != -1) {
-            event.setCancelled(true);
-            ItemStack item = p.getItemInHand();
-            if (item != null && item.getType().equals(Material.ICE)
-                    || item.getType().equals(Material.PACKED_ICE)) {
-                if (event.getRightClicked() instanceof Player) {
-                    Player target = (Player) event.getRightClicked();
-                    this.toggleFreeze(target);
-                }
-            }
-        }
+    public List<Froze> getFrozen() {
+        return this.frozen;
     }
 
     public List<Report> getReports() {
