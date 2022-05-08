@@ -129,8 +129,22 @@ public class Staff extends JavaPlugin {
         this.reports.add(freshReport);
     }
 
-    public void newTicket(Player reporter, Player reported, String reportReason) {
-        Report freshTicket = new Report(reporter, reported, reportReason, false);
+    public void updateReport(int indexReportToUpdate, Report newReport, Player updater) {
+        try {
+            Database.updateReport(newReport, indexReportToUpdate + 1);
+        } catch (SQLException e) {
+            updater.sendMessage(
+                    REPORT_PREFIX + ChatColor.RED + "Le report n'a pas pu être mis à jour désolé." + e);
+            Bukkit.getConsoleSender().sendMessage(
+                    REPORT_PREFIX + ChatColor.RED + "Edit DB impossible, update report non pris en compte." + e);
+            return;
+        }
+        updater.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Le report a bien été mis à jour !");
+        this.reports.set(indexReportToUpdate, newReport);
+    }
+
+    public void newTicket(Player reporter, String reportReason) {
+        Report freshTicket = new Report(reporter, null, reportReason, false);
         try {
             Database.addReportToDB(freshTicket);
         } catch (SQLException e) {

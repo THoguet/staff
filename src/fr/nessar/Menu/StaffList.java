@@ -29,7 +29,8 @@ public class StaffList implements InventoryHolder {
 	@Override
 	public Inventory getInventory() {
 		List<OfflinePlayer> staffList = this.plugin.getStaff();
-		Inventory gui = Static.getBase(this);
+		String title = ChatColor.GOLD + "Staff " + ChatColor.GRAY + "> " + ChatColor.YELLOW + "Page " + page;
+		Inventory gui = Static.getBase(this, title);
 		ItemStack teteHero = StaffMod.setNameItem(ChatColor.GOLD + "Staff en ligne",
 				Static.getPlayerHead("MHF_Herobrine"));
 		gui.setItem(4, teteHero);

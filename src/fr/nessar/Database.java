@@ -122,7 +122,7 @@ public class Database {
 			ret.add(new Report(rows.getObject("reporter", PlayerSave.class),
 					rows.getObject("reported", PlayerSave.class),
 					rows.getString("reportReason"), rows.getLong("reportTime"), rows.getBoolean("report"),
-					ReportStatus.values()[(rows.getInt("reportStatus"))]));
+					ReportStatus.getReportStatusFromInt(rows.getInt("reportStatus"))));
 		}
 		connection.close();
 		return ret;
@@ -197,6 +197,7 @@ public class Database {
 		statement.setObject(5, r.getReported());
 		statement.setObject(6, r.getReporter());
 		statement.setInt(7, index);
+		Bukkit.getConsoleSender().sendMessage("id: " + index);
 		statement.execute();
 		conn.close();
 	}

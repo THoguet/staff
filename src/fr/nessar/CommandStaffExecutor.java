@@ -46,7 +46,7 @@ public class CommandStaffExecutor implements CommandExecutor {
 					p.sendMessage(ChatColor.RED + permissionErrMessage());
 					return true;
 				}
-				p.openInventory(new ReportList(plugin, p, 1).getInventory());
+				p.openInventory(new ReportList(plugin, p, 1, false, false, false, false).getInventory());
 				return true;
 			}
 		}

@@ -1,6 +1,5 @@
 package fr.nessar;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -8,10 +7,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCreativeEvent;
-import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -74,24 +69,7 @@ public class PlayerEvent implements Listener {
 	}
 
 	@EventHandler
-	public void onPlayerInventoryDragEvent(InventoryDragEvent event) {
-		Player p = (Player) event.getWhoClicked();
-		int indexStaffMod = plugin.isInStaffMod(p);
-		if (indexStaffMod != -1) {
-			if (plugin.getInStaffMod().get(indexStaffMod).isStaffInv()) {
-				event.setCancelled(true);
-				p.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED
-						+ "Vous ne pouvez pas interagir avec le monde en staff mod.");
-			} else {
-				if (event.getOldCursor().getItemMeta().getDisplayName().equals(
-						ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
-					event.setCancelled(true);
-			}
-		}
-	}
-
-	@EventHandler
-	public void onPlayerInventoryDragEvent(PlayerPickupItemEvent event) {
+	public void onPlayerPickupItemEvent(PlayerPickupItemEvent event) {
 		Player p = (Player) event.getPlayer();
 		int indexStaffMod = plugin.isInStaffMod(p);
 		if (indexStaffMod != -1) {
@@ -101,10 +79,14 @@ public class PlayerEvent implements Listener {
 						+ "Vous ne pouvez pas interagir avec le monde en staff mod.");
 			}
 		}
+		if (plugin.isFrozen(p) != -1) {
+			event.setCancelled(true);
+			Static.sendFrozeMessage(p);
+		}
 	}
 
 	@EventHandler
-	public void onPlayerSneaking(PlayerToggleSneakEvent event) {
+	public void onPlayerToggleSneakEvent(PlayerToggleSneakEvent event) {
 		Player p = event.getPlayer();
 		int indexStaffMod = plugin.isInStaffMod(p);
 		if (indexStaffMod != -1) {
@@ -113,41 +95,7 @@ public class PlayerEvent implements Listener {
 	}
 
 	@EventHandler
-	public void onPlayerInventoryInteractEvent(InventoryInteractEvent event) {
-		Player p = (Player) event.getWhoClicked();
-		int indexStaffMod = plugin.isInStaffMod(p);
-		if (indexStaffMod != -1) {
-			if (plugin.getInStaffMod().get(indexStaffMod).isStaffInv()) {
-			}
-			event.setCancelled(true);
-			p.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED
-					+ "Vous ne pouvez pas interagir avec le monde en staff mod.");
-		} else {
-			if (!p.getInventory().getItem(8).getItemMeta().getDisplayName().equals(
-					ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
-				event.setCancelled(true);
-		}
-	}
-
-	@EventHandler
-	public void onPlayerInventoryCreativeEvent(InventoryCreativeEvent event) {
-		Player p = (Player) event.getWhoClicked();
-		int indexStaffMod = plugin.isInStaffMod(p);
-		if (indexStaffMod != -1) {
-			if (plugin.getInStaffMod().get(indexStaffMod).isStaffInv()) {
-			}
-			event.setCancelled(true);
-			p.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED
-					+ "Vous ne pouvez pas interagir avec le monde en staff mod.");
-		} else {
-			if (event.getCurrentItem() != null && event.getCurrentItem().getItemMeta().getDisplayName()
-					.equals(ChatColor.GOLD + "Staff Inv" + ChatColor.GRAY + ": " + ChatColor.RED + "Off"))
-				event.setCancelled(true);
-		}
-	}
-
-	@EventHandler
-	public void onPlayerPlayerInteractEvent(PlayerInteractEvent event) {
+	public void onPlayerInteractEvent(PlayerInteractEvent event) {
 		Player p = event.getPlayer();
 		int indexStaffMod = plugin.isInStaffMod(p);
 		if (indexStaffMod != -1) {
@@ -159,10 +107,14 @@ public class PlayerEvent implements Listener {
 				plugin.getInStaffMod().get(indexStaffMod).toggleOrUseSlot(event.getMaterial());
 			}
 		}
+		if (plugin.isFrozen(p) != -1) {
+			event.setCancelled(true);
+			Static.sendFrozeMessage(p);
+		}
 	}
 
 	@EventHandler
-	public void onPlayerArmorStandManipulationEvent(PlayerArmorStandManipulateEvent event) {
+	public void onPlayerArmorStandManipulateEvent(PlayerArmorStandManipulateEvent event) {
 		Player p = event.getPlayer();
 		if (plugin.isInStaffMod(p) != -1) {
 			event.setCancelled(true);
@@ -174,7 +126,7 @@ public class PlayerEvent implements Listener {
 	}
 
 	@EventHandler
-	public void onPlayerPickupItemEvent(PlayerPickupItemEvent event) {
+	public void onPlayerPortalEvent(PlayerPortalEvent event) {
 		Player p = event.getPlayer();
 		if (plugin.isInStaffMod(p) != -1) {
 			event.setCancelled(true);
@@ -186,19 +138,7 @@ public class PlayerEvent implements Listener {
 	}
 
 	@EventHandler
-	public void handleEvent(PlayerPortalEvent event) {
-		Player p = event.getPlayer();
-		if (plugin.isInStaffMod(p) != -1) {
-			event.setCancelled(true);
-		}
-		if (plugin.isFrozen(p) != -1) {
-			event.setCancelled(true);
-			Static.sendFrozeMessage(p);
-		}
-	}
-
-	@EventHandler
-	public void onPlayerPlayerInteractEntityEvent(PlayerInteractEntityEvent event) {
+	public void onPlayerInteractEntityEvent(PlayerInteractEntityEvent event) {
 		Player p = event.getPlayer();
 		int indexStaffMod = plugin.isInStaffMod(p);
 		if (indexStaffMod != -1) {

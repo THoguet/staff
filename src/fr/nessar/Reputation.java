@@ -7,8 +7,8 @@ import java.util.UUID;
 import org.bukkit.ChatColor;
 
 public class Reputation {
-	private static byte reporterValues[] = { 0, 0, 0, 0, -50, -15, 0, 25 };
-	private static byte reportedValues[] = { 0, 0, 0, 0, 15, 5, 0, -50 };
+	private static byte reporterValues[] = { 0, 0, 0, 0, -40, -15, 0, 15 };
+	private static byte reportedValues[] = { 0, 0, 0, 0, 5, 2, 0, -40 };
 	private static byte ticketValues[] = { 0, 0, 0, 0, -20, -5, 0, 10 };
 	private static byte punishmentValues[] = { 0, -25, -50 };
 
@@ -22,22 +22,31 @@ public class Reputation {
 		String sqrYELLOW = ChatColor.YELLOW.toString();
 		String sqrGREEN = ChatColor.GREEN.toString();
 		String sqrDARKGREEN = ChatColor.DARK_GREEN.toString();
-		if (rep == 0)
+		String colorEnd;
+		if (rep == 0) {
+			colorEnd = sqrBLUE;
 			sqrBLUE = sqrBLUE + ChatColor.UNDERLINE.toString();
-		else if (rep < -80)
+		} else if (rep < -80) {
+			colorEnd = sqrDARKRED;
 			sqrDARKRED = sqrDARKRED + ChatColor.UNDERLINE.toString();
-		else if (rep < 40)
+		} else if (rep < -40) {
+			colorEnd = sqrRED;
 			sqrRED = sqrRED + ChatColor.UNDERLINE.toString();
-		else if (rep < 0)
+		} else if (rep < 0) {
+			colorEnd = sqrGOLD;
 			sqrGOLD = sqrGOLD + ChatColor.UNDERLINE.toString();
-		else if (rep < 40)
+		} else if (rep < 40) {
+			colorEnd = sqrYELLOW;
 			sqrYELLOW = sqrYELLOW + ChatColor.UNDERLINE.toString();
-		else if (rep < 80)
+		} else if (rep < 80) {
+			colorEnd = sqrGREEN;
 			sqrGREEN = sqrGREEN + ChatColor.UNDERLINE.toString();
-		else
+		} else {
+			colorEnd = sqrDARKGREEN;
 			sqrDARKGREEN = sqrDARKGREEN + ChatColor.UNDERLINE.toString();
+		}
 		return sqrDARKRED + symbol + sqrRED + symbol + sqrGOLD + symbol + sqrBLUE + symbol + sqrYELLOW + symbol
-				+ sqrGREEN + symbol + sqrDARKGREEN + symbol;
+				+ sqrGREEN + symbol + sqrDARKGREEN + symbol + colorEnd + " (" + rep + ")";
 	}
 
 	// TODO use db precise request instead of all the reports and punishments
@@ -56,8 +65,8 @@ public class Reputation {
 		List<Report> ret = new ArrayList<>();
 		for (Report report : reports) {
 			if (UUID.fromString(report.getReporter().getUniqueId()).equals(pUUID)) {
+				ret.add(report);
 			}
-			ret.add(report);
 		}
 		return ret;
 	}
@@ -88,9 +97,9 @@ public class Reputation {
 		short ret = 0;
 		for (Report report : reports) {
 			if (report.isReport())
-				ret -= reporterValues[report.getStatus().getStatusCode()];
+				ret += reporterValues[report.getStatus().getStatusCode()];
 			else
-				ret -= ticketValues[report.getStatus().getStatusCode()];
+				ret += ticketValues[report.getStatus().getStatusCode()];
 		}
 		return ret;
 	}
@@ -99,7 +108,7 @@ public class Reputation {
 		short ret = 0;
 		for (Report report : reports) {
 			if (report.isReport())
-				ret -= reportedValues[report.getStatus().getStatusCode()];
+				ret += reportedValues[report.getStatus().getStatusCode()];
 		}
 		return ret;
 	}
@@ -107,7 +116,7 @@ public class Reputation {
 	private static short calcRepFromPunishments(List<Punishment> punishments) {
 		short ret = 0;
 		for (Punishment punishment : punishments) {
-			ret -= punishmentValues[punishment.getpType().getPunishCode()];
+			ret += punishmentValues[punishment.getpType().getPunishCode()];
 		}
 		return ret;
 	}

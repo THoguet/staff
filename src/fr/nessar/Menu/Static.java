@@ -32,7 +32,7 @@ public class Static {
 	public static ItemStack getReportHead(boolean reporter, String name, boolean report, UUID playerUUID,
 			Staff plugin) {
 		ItemStack head = getPlayerHead(name);
-		head = StaffMod.setNameItem(ChatColor.GRAY + "Signalé: "
+		head = StaffMod.setNameItem(ChatColor.GRAY + (reporter ? "Signaleur: " : "Signalé: ")
 				+ (reporter ? ChatColor.GREEN : ChatColor.RED) + name + " " + getConnectionStr(name), head);
 		List<String> lore = new ArrayList<>();
 		lore.add(ChatColor.GRAY + "Réputation: "
@@ -44,9 +44,11 @@ public class Static {
 				+ Reputation.getReportOf(playerUUID, plugin.getReports()).size());
 		lore.add(" ");
 		lore.add(ChatColor.GOLD + "Clic gauche " + ChatColor.GRAY
-				+ "pour vous téléporter à la position actuelle du joueur " + ChatColor.YELLOW + name);
+				+ "pour vous téléporter à la");
+		lore.add(ChatColor.GRAY + "position actuelle du joueur " + ChatColor.YELLOW + name);
 		lore.add(ChatColor.GOLD + "Clic droit " + ChatColor.GRAY
-				+ "pour vous téléporter à l'ancienne position du joueur " + ChatColor.YELLOW + name);
+				+ "pour vous téléporter à ");
+		lore.add(ChatColor.GRAY + "l'ancienne position du joueur " + ChatColor.YELLOW + name);
 		head = StaffMod.setLoreitem(lore, head);
 		return head;
 	}
@@ -133,8 +135,8 @@ public class Static {
 		p.sendMessage("" + ChatColor.DARK_RED + "█████████████████████████████████");
 	}
 
-	public static Inventory getBase(InventoryHolder invHolder) {
-		Inventory gui = Bukkit.createInventory(invHolder, 54, "");
+	public static Inventory getBase(InventoryHolder invHolder, String title) {
+		Inventory gui = Bukkit.createInventory(invHolder, 54, title);
 		List<ItemStack> listItem = new ArrayList<>();
 		for (int i = 0; i < 54; i++) {
 			listItem.add(new ItemStack(Material.AIR));
@@ -181,10 +183,10 @@ public class Static {
 		ItemStack itemReport;
 		if (r.isReport())
 			itemReport = StaffMod.setNameItem(ChatColor.RED + "Report " + ChatColor.GRAY + "#" + i,
-					new ItemStack(Material.PAPER));
+					r.getStatus().isClassed() ? new ItemStack(Material.BOOK) : new ItemStack(Material.PAPER));
 		else
 			itemReport = StaffMod.setNameItem(ChatColor.BLUE + "Ticket " + ChatColor.GRAY + "#" + i,
-					new ItemStack(Material.EMPTY_MAP));
+					r.getStatus().isClassed() ? new ItemStack(Material.BOOK) : new ItemStack(Material.EMPTY_MAP));
 		itemReport = StaffMod.setLoreitem(itemLore, itemReport);
 		if (r.getStatus() != ReportStatus.WAITING)
 			itemReport = Static.addGlow(itemReport);

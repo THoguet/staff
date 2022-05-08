@@ -82,9 +82,10 @@ public class StaffMod {
 		if (m.equals(Material.INK_SACK))
 			toggleVanish();
 		else if (m.equals(Material.PAPER)) {
-			new ReportList(plugin, who, 1);
+			this.who.openInventory(
+					new ReportList(plugin, who, 1, false, only_report, only_ticket, only_important).getInventory());
 		} else if (m.equals(Material.SKULL_ITEM)) {
-			new StaffList(1, plugin, who);
+			this.who.openInventory(new StaffList(1, plugin, who).getInventory());
 		} else if (m.equals(Material.REDSTONE) || m.equals(Material.SULPHUR))
 			toggleImportant();
 		else if (m.equals(Material.TORCH) || m.equals(Material.LEVER) || m.equals(Material.REDSTONE_TORCH_ON))
