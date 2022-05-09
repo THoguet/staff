@@ -74,6 +74,7 @@ public class Staff extends JavaPlugin {
         getCommand("unfreeze").setExecutor(new CommandFreezeExecutor(this));
         getCommand("report").setExecutor(new CommandReportExecutor(this));
         // getCommand("staff").setTabCompleter(new StaffTabCompletion(this));
+        this.getServer().getPluginManager().registerEvents(new CommandTicketExecutor(this), this);
         this.getServer().getPluginManager().registerEvents(new InventoryEvents(this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerEvent(this), this);
         Bukkit.getServer().getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Loaded.");
@@ -153,6 +154,7 @@ public class Staff extends JavaPlugin {
                     REPORT_PREFIX + ChatColor.RED + "Ajout a la DB impossible, ticket non pris en compte.");
             return;
         }
+        reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre ticket a bien été prit en compte !");
         this.reports.add(freshTicket);
     }
 

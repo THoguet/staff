@@ -9,7 +9,7 @@ import org.bukkit.ChatColor;
 public class Reputation {
 	private static byte reporterValues[] = { 0, 0, 0, 0, -40, -15, 0, 15 };
 	private static byte reportedValues[] = { 0, 0, 0, 0, 5, 2, 0, -40 };
-	private static byte ticketValues[] = { 0, 0, 0, 0, -20, -5, 0, 10 };
+	private static byte ticketValues[] = { 0, 0, 0, 0, -20, -5, -2, 5 };
 	private static byte punishmentValues[] = { 0, -25, -50 };
 
 	public static String getRepStr(UUID pUUID, List<Report> reports, List<Punishment> punishList) {

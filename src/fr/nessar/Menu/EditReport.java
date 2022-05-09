@@ -21,11 +21,18 @@ public class EditReport implements InventoryHolder {
 	private Report r;
 	private int indexReport;
 	private Staff plugin;
+	private boolean fromArchive;
 
 	public EditReport(Report r, int indexReport, Staff plugin) {
 		this.r = r;
 		this.indexReport = indexReport;
 		this.plugin = plugin;
+		this.fromArchive = false;
+	}
+
+	public EditReport(Report r, int indexReport, Staff plugin, boolean fromArchive) {
+		this(r, indexReport, plugin);
+		this.fromArchive = true;
 	}
 
 	@Override
@@ -37,9 +44,14 @@ public class EditReport implements InventoryHolder {
 			title = ChatColor.BLUE + "Ticket ";
 		title += ChatColor.GRAY + "#" + indexReport;
 		Inventory gui = Static.getBase(this, title);
-		ItemStack backToReportList = StaffMod.setNameItem(ChatColor.GOLD + "Liste des reports",
-				new ItemStack(Material.BOOKSHELF));
-		gui.setItem(0, backToReportList);
+		ItemStack back;
+		if (!fromArchive)
+			back = StaffMod.setNameItem(ChatColor.GOLD + "Liste des reports",
+					new ItemStack(Material.BOOKSHELF));
+		else
+			back = StaffMod.setNameItem(ChatColor.GOLD + "Retour aux archives",
+					new ItemStack(Material.BOOKSHELF));
+		gui.setItem(0, back);
 		ItemStack reportitem = Static.getReportItem(this.r, this.indexReport);
 		gui.setItem(4, reportitem);
 		gui.setItem(18, reportitem);
@@ -53,11 +65,13 @@ public class EditReport implements InventoryHolder {
 				+ " pour sanctionner le joueur ");
 		lore.add(ChatColor.GRAY + "ayant envoyé ce report: " + ChatColor.GREEN + r.getReporter().getName());
 		abusiveReport = StaffMod.setLoreitem(lore, abusiveReport);
-		ItemStack reportedHead = Static.getReportHead(false, r.getReported().getName(), r.isReport(),
-				UUID.fromString(r.getReported().getUniqueId()), this.plugin);
-		gui.setItem(23, reportedHead);
-		ItemStack data = Static.getSavedData(r);
-		gui.setItem(26, data);
+		if (r.isReport()) {
+			ItemStack reportedHead = Static.getReportHead(false, r.getReported().getName(), r.isReport(),
+					UUID.fromString(r.getReported().getUniqueId()), this.plugin);
+			gui.setItem(23, reportedHead);
+			ItemStack data = Static.getSavedData(r);
+			gui.setItem(26, data);
+		}
 		String startStatusLore = ChatColor.GOLD + "Clic " + ChatColor.GRAY + "pour ";
 		List<String> loreStatus = new ArrayList<>();
 		loreStatus.add(startStatusLore + "marquer le statut du");

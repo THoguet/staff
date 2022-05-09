@@ -86,7 +86,8 @@ public class ReportList implements InventoryHolder {
 		title += ChatColor.GRAY + " > ";
 		title += ChatColor.YELLOW + "Page " + this.page;
 		Inventory gui = Static.getBase(this, title);
-		gui.setItem(52, ImportantItem);
+		if (!archive)
+			gui.setItem(52, ImportantItem);
 		gui.setItem(53, filterItem);
 		gui.setItem(4, StaffMod.setNameItem(ChatColor.GOLD + nameReportsOrTickets, reportOrTickets));
 		ItemStack archives = StaffMod.setNameItem(ChatColor.GOLD + (this.archive ? "Sortir des archives" : "Archives"),

@@ -18,7 +18,8 @@ public class Report {
 
 	public Report(Player reporter, Player reported, String reportReason, long reportTime, boolean report,
 			ReportStatus status) {
-		this(new PlayerSave(reporter), new PlayerSave(reported), reportReason, reportTime, report, status);
+		this(new PlayerSave(reporter), report ? new PlayerSave(reported) : null, reportReason, reportTime, report,
+				status);
 	}
 
 	public Report(PlayerSave reporter, PlayerSave reported, String reportReason, long reportTime, boolean report,
@@ -45,9 +46,10 @@ public class Report {
 		ret.add(ChatColor.GRAY + "Signaleur: " + ChatColor.GREEN + this.reporter.getName() + (this.reporter.isOnline()
 				? ChatColor.GRAY + " (" + ChatColor.GREEN + "Connecté" + ChatColor.GRAY + ")"
 				: ChatColor.GRAY + " (" + ChatColor.RED + "Déconnecté" + ChatColor.GRAY + ")"));
-		ret.add(ChatColor.GRAY + "Signalé: " + ChatColor.RED + this.reported.getName() + (this.reported.isOnline()
-				? ChatColor.GRAY + " (" + ChatColor.GREEN + "Connecté" + ChatColor.GRAY + ")"
-				: ChatColor.GRAY + " (" + ChatColor.RED + "Déconnecté" + ChatColor.GRAY + ")"));
+		if (this.report)
+			ret.add(ChatColor.GRAY + "Signalé: " + ChatColor.RED + this.reported.getName() + (this.reported.isOnline()
+					? ChatColor.GRAY + " (" + ChatColor.GREEN + "Connecté" + ChatColor.GRAY + ")"
+					: ChatColor.GRAY + " (" + ChatColor.RED + "Déconnecté" + ChatColor.GRAY + ")"));
 		ret.add(ChatColor.GRAY + "Raison: " + ChatColor.GOLD + this.reportReason);
 		ret.add("  ");
 		ret.add(ChatColor.GOLD + "Clic" + ChatColor.GRAY + " pour afficher les détails.");

@@ -57,7 +57,7 @@ public class Static {
 		ItemStack data = StaffMod.setNameItem(ChatColor.YELLOW + "Données collectées",
 				new ItemStack(Material.ENCHANTED_BOOK));
 		List<String> lore = new ArrayList<>();
-		lore.add(ChatColor.YELLOW + "Signaleur: " + ChatColor.RED + r.getReported().getName()
+		lore.add(ChatColor.YELLOW + "Signalé: " + ChatColor.RED + r.getReported().getName()
 				+ " " + getConnectionStr(r.getReported().getName()));
 		lore.add(
 				ChatColor.GRAY + "  Gamemode: " + ChatColor.BLUE + r.getReported().getGamemodeStr() + ChatColor.GRAY

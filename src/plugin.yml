@@ -22,7 +22,11 @@ commands:
     description: freeze the target
     permission: staff.report
     usage: "Usage: /<command> <target> (reason)"
-
+  //:
+    description: Ask help from moderation
+    permission: staff.ticket
+    aliases: [ticket, admin]
+    usage: "Usage: /<command> <message>"
 permissions:
   staff:
     description: allow base command staff
