@@ -33,6 +33,20 @@ public class Report {
 	}
 
 	public List<String> getLore() {
+		List<String> reasonStrList = new ArrayList<>();
+		String copyReason = this.reportReason.toString();
+		if (copyReason.length() <= 15) {
+			reasonStrList.add(copyReason);
+		} else {
+			while (copyReason.length() > 15) {
+				reasonStrList.add(copyReason.subSequence(0, 15).toString());
+				copyReason = copyReason.substring(15);
+			}
+			reasonStrList.add(copyReason);
+		}
+		if (reasonStrList.size() % 2 == 0) {
+			reasonStrList.add("");
+		}
 		List<String> ret = new ArrayList<>();
 		ret.add(ChatColor.GRAY + "Statut: " + this.status.getStatusName(this.report));
 		ret.add(ChatColor.GRAY + "Date: " + ChatColor.YELLOW
@@ -50,7 +64,11 @@ public class Report {
 			ret.add(ChatColor.GRAY + "Signalé: " + ChatColor.RED + this.reported.getName() + (this.reported.isOnline()
 					? ChatColor.GRAY + " (" + ChatColor.GREEN + "Connecté" + ChatColor.GRAY + ")"
 					: ChatColor.GRAY + " (" + ChatColor.RED + "Déconnecté" + ChatColor.GRAY + ")"));
-		ret.add(ChatColor.GRAY + "Raison: " + ChatColor.GOLD + this.reportReason);
+		ret.add(ChatColor.GRAY + "Raison: " + ChatColor.GOLD + reasonStrList.get(0));
+		reasonStrList.remove(0);
+		for (int i = 0; i < reasonStrList.size(); i += 2) {
+			ret.add(ChatColor.GOLD + reasonStrList.get(i) + reasonStrList.get(i + 1));
+		}
 		ret.add("  ");
 		ret.add(ChatColor.GOLD + "Clic" + ChatColor.GRAY + " pour afficher les détails.");
 		return ret;

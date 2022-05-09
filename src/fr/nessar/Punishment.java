@@ -30,9 +30,9 @@ public class Punishment {
 		this(punished.getUniqueId(), punisher.getUniqueId(), message, pType, startTime, endtime, reportID);
 	}
 
-	public Punishment(UUID punishedUUID, UUID punisherUUID, String message, int pType, long startTime,
-			long endtime, int reportID) {
-		this(punishedUUID, punisherUUID, message, PunishType.valueOf(pType), startTime, endtime, reportID);
+	public Punishment(UUID punishedUUID, UUID punisherUUID, String message, PunishType pType, long startTime,
+			long endtime) {
+		this(punishedUUID, punisherUUID, message, pType, startTime, endtime, -1);
 	}
 
 	public UUID getPunishedUUID() {

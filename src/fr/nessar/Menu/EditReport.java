@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -32,7 +31,7 @@ public class EditReport implements InventoryHolder {
 
 	public EditReport(Report r, int indexReport, Staff plugin, boolean fromArchive) {
 		this(r, indexReport, plugin);
-		this.fromArchive = true;
+		this.fromArchive = fromArchive;
 	}
 
 	@Override

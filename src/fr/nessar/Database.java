@@ -79,7 +79,8 @@ public class Database {
 		while (rows.next()) {
 			ret.add(new Punishment(rows.getObject("punishedUUID", UUID.class),
 					rows.getObject("punisherUUID", UUID.class),
-					rows.getString("message"), rows.getInt("pType"), rows.getLong("startTime"), rows.getLong("endtime"),
+					rows.getString("message"), PunishType.valueOf(rows.getInt("pType")), rows.getLong("startTime"),
+					rows.getLong("endtime"),
 					rows.getInt("reportID")));
 		}
 		connection.close();
@@ -197,7 +198,6 @@ public class Database {
 		statement.setObject(5, r.getReported());
 		statement.setObject(6, r.getReporter());
 		statement.setInt(7, index);
-		Bukkit.getConsoleSender().sendMessage("id: " + index);
 		statement.execute();
 		conn.close();
 	}

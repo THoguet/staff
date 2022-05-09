@@ -3,7 +3,9 @@ package fr.nessar;
 public enum PunishType {
 	NULL(0),
 	MUTE(1),
-	BAN(2);
+	BAN(2),
+	REPORT(3),
+	TICKET(4);
 
 	private final int punishCode;
 
@@ -16,11 +18,19 @@ public enum PunishType {
 	}
 
 	public boolean isBanned() {
-		return this.punishCode == 2;
+		return this == BAN;
 	}
 
 	public boolean isMuted() {
-		return this.punishCode == 1;
+		return this == MUTE;
+	}
+
+	public boolean isReport() {
+		return this == REPORT;
+	}
+
+	public boolean isTicket() {
+		return this == TICKET;
 	}
 
 	public static PunishType valueOf(int punishCode) {

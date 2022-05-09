@@ -169,9 +169,9 @@ public class StaffMod {
 		} else {
 			ret += "Report & Ticket list ";
 		}
-		return ret += "(" + ChatColor.GRAY
+		return ret += "(" + ChatColor.GRAY + ChatColor.BOLD.toString()
 				+ String.valueOf(this.plugin.getNbReport(minimalStatus, 0, this.getNbReportReportArg()))
-				+ ChatColor.GOLD + ")";
+				+ ChatColor.GOLD + ChatColor.GOLD + ChatColor.BOLD.toString() + ")";
 	}
 
 	public void setItem() {
