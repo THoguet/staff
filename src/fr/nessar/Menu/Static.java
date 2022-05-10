@@ -43,9 +43,11 @@ public class Static {
 		lore.add(ChatColor.GRAY + "Signalments reçus: " + ChatColor.BLUE
 				+ Reputation.getReportOf(playerUUID, plugin.getReports()).size());
 		lore.add(" ");
-		lore.add(ChatColor.GOLD + "Clic gauche " + ChatColor.GRAY
-				+ "pour vous téléporter à la");
-		lore.add(ChatColor.GRAY + "position actuelle du joueur " + ChatColor.YELLOW + name);
+		if (Bukkit.getPlayer(playerUUID) != null) {
+			lore.add(ChatColor.GOLD + "Clic gauche " + ChatColor.GRAY
+					+ "pour vous téléporter à la");
+			lore.add(ChatColor.GRAY + "position actuelle du joueur " + ChatColor.YELLOW + name);
+		}
 		lore.add(ChatColor.GOLD + "Clic droit " + ChatColor.GRAY
 				+ "pour vous téléporter à ");
 		lore.add(ChatColor.GRAY + "l'ancienne position du joueur " + ChatColor.YELLOW + name);
@@ -62,10 +64,10 @@ public class Static {
 		lore.add(
 				ChatColor.GRAY + "  Gamemode: " + ChatColor.BLUE + r.getReported().getGamemodeStr() + ChatColor.GRAY
 						+ ", Au sol: "
-						+ (r.getReported().isFlying() ? ChatColor.RED + "non" : ChatColor.GREEN + "oui"));
+						+ (r.getReported().isFlying() ? ChatColor.GREEN + "oui" : ChatColor.RED + "non"));
 		lore.add(ChatColor.GRAY + "  Sneak: "
-				+ (r.getReported().isSneaking() ? ChatColor.RED + "non" : ChatColor.GREEN + "oui") + ChatColor.GRAY
-				+ ", Sprint: " + (r.getReported().isSprinting() ? ChatColor.RED + "non" : ChatColor.GREEN + "oui"));
+				+ (r.getReported().isSneaking() ? ChatColor.GREEN + "oui" : ChatColor.RED + "non") + ChatColor.GRAY
+				+ ", Sprint: " + (r.getReported().isSprinting() ? ChatColor.GREEN + "oui" : ChatColor.RED + "non"));
 		lore.add(ChatColor.GRAY + "  Vie: " + ChatColor.RED + r.getReported().getHealth() + "/"
 				+ r.getReported().getMaxhealth() + ChatColor.GRAY + ", Nourriture: " + ChatColor.GOLD
 				+ r.getReported().getFood());

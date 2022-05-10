@@ -1,5 +1,9 @@
 package fr.nessar;
 
+import java.sql.SQLException;
+import java.util.Date;
+
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -7,7 +11,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -26,6 +32,28 @@ public class PlayerEvent implements Listener {
 
 	public PlayerEvent(Staff plugin) {
 		this.plugin = plugin;
+	}
+
+	@EventHandler
+	public void onCommand(PlayerCommandPreprocessEvent event) {
+		ChatMessage cMessage = new ChatMessage(event.getPlayer(), new Date().getTime(), event.getMessage());
+		try {
+			Database.addChatMessageToDB(cMessage);
+		} catch (SQLException e) {
+			Bukkit.getConsoleSender()
+					.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Cannot add message to chat history...");
+		}
+	}
+
+	@EventHandler
+	public void onPlayerChatEvent(AsyncPlayerChatEvent event) {
+		ChatMessage cMessage = new ChatMessage(event.getPlayer(), new Date().getTime(), event.getMessage());
+		try {
+			Database.addChatMessageToDB(cMessage);
+		} catch (SQLException e) {
+			Bukkit.getConsoleSender()
+					.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Cannot add message to chat history...");
+		}
 	}
 
 	@EventHandler

@@ -16,6 +16,9 @@ import net.md_5.bungee.api.ChatColor;
 
 public class ReportList implements InventoryHolder {
 
+	private static final int NBREPORTSPERPAGE = 27;
+	private static final int FIRSTCASEREPORT = 18;
+
 	private Staff plugin;
 	private Player user;
 	private int page;
@@ -58,6 +61,7 @@ public class ReportList implements InventoryHolder {
 		boolean permReport = false;
 		boolean permTicket = false;
 		List<Report> reportsList = plugin.getReports();
+		final int nbreport = reportsList.size();
 		ItemStack reportOrTickets = new ItemStack(Material.BOOKSHELF);
 		String nameReportsOrTickets = "";
 		if (this.user.hasPermission("staff.tickets") && this.user.hasPermission("staff.reports")) {
@@ -90,23 +94,35 @@ public class ReportList implements InventoryHolder {
 			gui.setItem(52, ImportantItem);
 		gui.setItem(53, filterItem);
 		gui.setItem(4, StaffMod.setNameItem(ChatColor.GOLD + nameReportsOrTickets, reportOrTickets));
+		ItemStack prevpage = StaffMod.setNameItem(ChatColor.GOLD + "Page précédente", new ItemStack(Material.FEATHER));
+		ItemStack nextpage = StaffMod.setNameItem(ChatColor.GOLD + "Page suivante", new ItemStack(Material.FEATHER));
+		if (page != 1)
+			gui.setItem(3, prevpage);
 		ItemStack archives = StaffMod.setNameItem(ChatColor.GOLD + (this.archive ? "Sortir des archives" : "Archives"),
 				new ItemStack(Material.BOOKSHELF));
 		gui.setItem(8, archives);
-		int caseNumber = 18 - (28 * (page - 1));
-		for (int i = 28 * (page - 1); i < reportsList.size() && i < 28 * page; i++) {
+		int caseNumber = FIRSTCASEREPORT;
+		int cptClassedReport = 0;
+		for (int i = 0; i < nbreport && caseNumber < FIRSTCASEREPORT + NBREPORTSPERPAGE; i++) {
 			Report report = reportsList.get(i);
 			// filter reports / tickets by filter and perms and archives
 			boolean filter = only_Ticket != only_Report
 					&& (report.isReport() == only_Ticket || report.isTicket() == only_Report);
 			boolean filterImportant = only_important && !report.getStatus().isImportant();
 			if (filter || filterImportant || (report.isReport() != permReport && report.isTicket() != permTicket)
-					|| report.getStatus().isClassed() != archive)
+					|| report.getStatus().isClassed() != archive) {
+				cptClassedReport++;
 				continue;
+			}
+			if (i < cptClassedReport + NBREPORTSPERPAGE * (page - 1)) {
+				continue;
+			}
 			ItemStack itemReport = Static.getReportItem(report, i);
 			gui.setItem(caseNumber, itemReport);
 			caseNumber++;
 		}
+		if (nbreport - cptClassedReport > NBREPORTSPERPAGE * page)
+			gui.setItem(5, nextpage);
 		return gui;
 	}
 

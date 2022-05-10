@@ -58,9 +58,9 @@ public class PlayerSave implements Serializable {
 
 	public String getGamemodeStr() {
 		switch (this.gamemode) {
-			case 0:
-				return "survie";
 			case 1:
+				return "survie";
+			case 0:
 				return "créatif";
 			case 2:
 				return "Aventure";

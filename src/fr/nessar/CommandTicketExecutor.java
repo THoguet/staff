@@ -25,12 +25,12 @@ public class CommandTicketExecutor implements Listener {
 	@EventHandler(priority = EventPriority.HIGH)
 	public void onCommand(PlayerCommandPreprocessEvent event) {
 		Player p = event.getPlayer();
-		if (event.getMessage().startsWith("//")) {
-			if (!event.getMessage().startsWith("// ")) {
-				p.sendMessage(USAGE);
-			}
+		if (event.getMessage().startsWith("///")) {
+			p.sendMessage(USAGE);
+		}
+		if (event.getMessage().startsWith("// ")) {
 			String reason = event.getMessage().substring(3);
-			event.setMessage("ticket" + reason);
+			event.setMessage("/ticket" + reason);
 			event.setCancelled(true);
 			plugin.newTicket(p, reason);
 		}

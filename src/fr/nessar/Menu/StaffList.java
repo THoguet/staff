@@ -3,6 +3,7 @@ package fr.nessar.Menu;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -15,6 +16,9 @@ import fr.nessar.StaffMod;
 import net.md_5.bungee.api.ChatColor;
 
 public class StaffList implements InventoryHolder {
+
+	private static final int NBHEADPERPAGE = 27;
+	private static final int FIRSTCASEREPORT = 18;
 
 	private int page;
 	private Staff plugin;
@@ -29,6 +33,7 @@ public class StaffList implements InventoryHolder {
 	@Override
 	public Inventory getInventory() {
 		List<OfflinePlayer> staffList = this.plugin.getStaff();
+		final int NBSTAFF = staffList.size();
 		String title = ChatColor.GOLD + "Staff " + ChatColor.GRAY + "> " + ChatColor.YELLOW + "Page " + page;
 		Inventory gui = Static.getBase(this, title);
 		ItemStack teteHero = StaffMod.setNameItem(ChatColor.GOLD + "Staff en ligne",
@@ -44,12 +49,18 @@ public class StaffList implements InventoryHolder {
 			if (this.user.hasPermission("staff.reports"))
 				nameReportsOrTickets = "Reports";
 		}
+		ItemStack prevpage = StaffMod.setNameItem(ChatColor.GOLD + "Page précédente", new ItemStack(Material.FEATHER));
+		ItemStack nextpage = StaffMod.setNameItem(ChatColor.GOLD + "Page suivante", new ItemStack(Material.FEATHER));
+		if (page != 1)
+			gui.setItem(3, prevpage);
+		if (NBSTAFF - NBHEADPERPAGE * (page - 1) > NBHEADPERPAGE)
+			gui.setItem(5, nextpage);
 		reportOrTickets = StaffMod.setNameItem(ChatColor.GOLD + nameReportsOrTickets, reportOrTickets);
 		gui.setItem(0, reportOrTickets);
 		ItemStack archives = StaffMod.setNameItem(ChatColor.GOLD + "Archives", new ItemStack(Material.BOOKSHELF));
 		gui.setItem(8, archives);
-		for (int i = 28 * (page - 1); i < staffList.size() && i < 28 * page; i++) {
-			int caseNumber = 18 + i - (28 * (page - 1));
+		int caseNumber = FIRSTCASEREPORT;
+		for (int i = NBHEADPERPAGE * (page - 1); i < staffList.size() && i < NBHEADPERPAGE * page; i++) {
 			List<String> itemLore = new ArrayList<>();
 			OfflinePlayer playerStaff = staffList.get(i);
 			boolean isStaffOnline = staffList.get(i).isOnline();
@@ -66,6 +77,7 @@ public class StaffList implements InventoryHolder {
 					StaffMod.setNameItem(ChatColor.WHITE + playerStaff.getName(),
 							Static.getPlayerHead(playerStaff.getName())));
 			gui.setItem(caseNumber, staffHead);
+			caseNumber++;
 		}
 		return gui;
 	}

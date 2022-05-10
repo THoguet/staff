@@ -50,12 +50,12 @@ public class Report {
 		List<String> ret = new ArrayList<>();
 		ret.add(ChatColor.GRAY + "Statut: " + this.status.getStatusName(this.report));
 		ret.add(ChatColor.GRAY + "Date: " + ChatColor.YELLOW
-				+ this.getNumberPlusZero(this.getReportTimeDay()) + "/"
-				+ this.getNumberPlusZero(this.getReportTimeMonth()) + "/"
-				+ this.getNumberPlusZero(this.getReportTimeYear()) + " "
-				+ this.getNumberPlusZero(this.getReportTimeHour()) + ":"
-				+ this.getNumberPlusZero(this.getReportTimeMinute()) + ":"
-				+ this.getNumberPlusZero(this.getReportTimeSecond()));
+				+ Staff.getNumberPlusZero(this.getReportTimeDay()) + "/"
+				+ Staff.getNumberPlusZero(this.getReportTimeMonth()) + "/"
+				+ Staff.getNumberPlusZero(this.getReportTimeYear()) + " "
+				+ Staff.getNumberPlusZero(this.getReportTimeHour()) + ":"
+				+ Staff.getNumberPlusZero(this.getReportTimeMinute()) + ":"
+				+ Staff.getNumberPlusZero(this.getReportTimeSecond()));
 		ret.add(" ");
 		ret.add(ChatColor.GRAY + "Signaleur: " + ChatColor.GREEN + this.reporter.getName() + (this.reporter.isOnline()
 				? ChatColor.GRAY + " (" + ChatColor.GREEN + "Connecté" + ChatColor.GRAY + ")"
@@ -118,13 +118,6 @@ public class Report {
 		Calendar c = Calendar.getInstance();
 		c.setTime(new Date(this.reportTime));
 		return c.get(Calendar.SECOND);
-	}
-
-	public String getNumberPlusZero(int time) {
-		if (time < 10) {
-			return "0" + time;
-		}
-		return String.valueOf(time);
 	}
 
 	public int getReportTimeMinute() {

@@ -1,6 +1,8 @@
 package fr.nessar;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import org.bukkit.Bukkit;
@@ -11,6 +13,7 @@ import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryCreativeEvent;
@@ -102,6 +105,7 @@ public class InventoryEvents implements Listener {
 			Static.sendFrozeMessage(p);
 			return;
 		} else if (event.getClickedInventory().getHolder() instanceof ReportList) {
+			final int page = Staff.getNumberAtEndStr(event.getInventory().getName());
 			boolean isArchive = !event.getInventory().getItem(8).getItemMeta().getDisplayName()
 					.contains("Archives");
 			boolean only_Report = event.getInventory().getItem(53).getItemMeta().getDisplayName()
@@ -114,26 +118,34 @@ public class InventoryEvents implements Listener {
 				p.openInventory(new ReportList(plugin, p, 1, !isArchive, only_Report, only_Ticket, important)
 						.getInventory());
 			} else if (caseNumber == 52) {
-				p.openInventory(new ReportList(plugin, p, 1, isArchive, only_Report, only_Ticket, !important)
+				p.openInventory(new ReportList(plugin, p, page, isArchive, only_Report, only_Ticket, !important)
 						.getInventory());
 			} else if (caseNumber == 53) {
 				if (only_Report == only_Ticket) {
-					p.openInventory(new ReportList(plugin, p, 1, isArchive, only_Report, !only_Ticket, important)
+					p.openInventory(new ReportList(plugin, p, page, isArchive, only_Report, !only_Ticket, important)
 							.getInventory());
 				} else if (only_Ticket) {
-					p.openInventory(new ReportList(plugin, p, 1, isArchive, !only_Report, !only_Ticket, important)
+					p.openInventory(new ReportList(plugin, p, page, isArchive, !only_Report, !only_Ticket, important)
 							.getInventory());
 				} else {
-					p.openInventory(new ReportList(plugin, p, 1, isArchive, !only_Report, only_Ticket, important)
+					p.openInventory(new ReportList(plugin, p, page, isArchive, !only_Report, only_Ticket, important)
+							.getInventory());
+				}
+			} else if (caseNumber == 3) {
+				if (item != null && !item.getType().equals(Material.AIR)) {
+					p.openInventory(new ReportList(plugin, p, page - 1, isArchive, only_Report, only_Ticket, important)
+							.getInventory());
+				}
+			} else if (caseNumber == 5) {
+				if (item != null && !item.getType().equals(Material.AIR)) {
+					p.openInventory(new ReportList(plugin, p, page + 1, isArchive, only_Report, only_Ticket, important)
 							.getInventory());
 				}
 			} else {
 				List<Report> reports = plugin.getReports();
 				if (caseNumber >= 18 && caseNumber <= 44) {
-					int reportNumber;
 					if (item != null && !item.getType().equals(Material.AIR)) {
-						reportNumber = Integer
-								.valueOf(itemM.getDisplayName().substring(itemM.getDisplayName().length() - 1));
+						int reportNumber = Staff.getNumberAtEndStr(itemM.getDisplayName());
 						p.openInventory(
 								new EditReport(reports.get(reportNumber), reportNumber, plugin, isArchive)
 										.getInventory());
@@ -141,10 +153,19 @@ public class InventoryEvents implements Listener {
 				}
 			}
 		} else if (event.getClickedInventory().getHolder() instanceof StaffList) {
-			if (event.getRawSlot() == 0) {
+			final int page = Staff.getNumberAtEndStr(event.getInventory().getName());
+			if (caseNumber == 0) {
 				p.openInventory(new ReportList(plugin, p, 1, false, false, false, false).getInventory());
-			} else if (event.getRawSlot() == 8) {
+			} else if (caseNumber == 8) {
 				p.openInventory(new ReportList(plugin, p, 1, true, false, false, false).getInventory());
+			} else if (caseNumber == 3) {
+				if (item != null && !item.getType().equals(Material.AIR)) {
+					p.openInventory(new StaffList(page - 1, plugin, p).getInventory());
+				}
+			} else if (caseNumber == 5) {
+				if (item != null && !item.getType().equals(Material.AIR)) {
+					p.openInventory(new StaffList(page + 1, plugin, p).getInventory());
+				}
 			} else {
 				List<OfflinePlayer> staffList = plugin.getStaff();
 				int indexStaffList = caseNumber - 18;
@@ -162,65 +183,107 @@ public class InventoryEvents implements Listener {
 				}
 			}
 		} else if (event.getClickedInventory().getHolder() instanceof EditReport) {
+			boolean fromArchive = event.getInventory().getItem(0).getItemMeta().getDisplayName()
+					.contains("Retour aux archives");
 			if (caseNumber == 0) {
-				boolean fromArchive = event.getInventory().getItem(0).getItemMeta().getDisplayName()
-						.contains("Retour aux archives");
 				if (fromArchive)
 					p.openInventory(new ReportList(plugin, p, 1, true, false, false, false).getInventory());
 				else
 					p.openInventory(new ReportList(plugin, p, 1, false, false, false, false).getInventory());
 			}
 			String displayNameReport = event.getInventory().getItem(4).getItemMeta().getDisplayName();
-			int indexReport = Character
-					.getNumericValue(displayNameReport.charAt(displayNameReport.length() - 1));
-			if (caseNumber == 22) {
-				Report toEdit = plugin.getReports().get(indexReport);
-				toEdit.changeStatus(ReportStatus.CLASSED_ABUSIVE);
-				plugin.updateReport(indexReport, toEdit, p);
+			int indexReport = Staff.getNumberAtEndStr(displayNameReport);
+			Report report = plugin.getReports().get(indexReport);
+			if (caseNumber == 21 && item.getType() != Material.AIR) {
+				if (event.getClick() == ClickType.RIGHT || event.getClick() == ClickType.SHIFT_RIGHT) {
+					p.teleport(report.getReporter().getLocation());
+					p.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.GREEN
+							+ "Vous avez bien été téléporté à l'ancienne position de "
+							+ report.getReporter().getDisplayName());
+				} else if (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.SHIFT_LEFT)
+					if (report.getReporter().isOnline()) {
+						p.teleport(
+								Bukkit.getPlayer(UUID.fromString(report.getReporter().getPlayeruuid())).getLocation());
+						p.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.GREEN
+								+ "Vous avez bien été téléporté à "
+								+ report.getReporter().getDisplayName());
+					}
+			} else if (caseNumber == 22) {
+				report.changeStatus(ReportStatus.CLASSED_ABUSIVE);
+				plugin.updateReport(indexReport, report, p);
 				p.openInventory(
 						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin)
 								.getInventory());
+			} else if (caseNumber == 23 && item.getType() != Material.AIR) {
+				if (event.getClick() == ClickType.RIGHT || event.getClick() == ClickType.SHIFT_RIGHT) {
+					p.teleport(report.getReported().getLocation());
+					p.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.GREEN
+							+ "Vous avez bien été téléporté à l'ancienne position de "
+							+ report.getReported().getDisplayName());
+				} else if (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.SHIFT_LEFT)
+					if (report.getReported().isOnline()) {
+						p.teleport(
+								Bukkit.getPlayer(UUID.fromString(report.getReported().getPlayeruuid())).getLocation());
+						p.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.GREEN
+								+ "Vous avez bien été téléporté à "
+								+ report.getReported().getDisplayName());
+					}
+			} else if (caseNumber == 26) {
+				int nbmessage = 30;
+				List<ChatMessage> chatHistory;
+				try {
+					chatHistory = Database.loadchatHistoryFromDB(report.getReportTime(), nbmessage,
+							UUID.fromString(report.getReporter().getUniqueId()),
+							UUID.fromString(report.getReported().getUniqueId()));
+				} catch (Exception e) {
+					Bukkit.getConsoleSender()
+							.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Cannot load chat history ...");
+					chatHistory = new ArrayList<>();
+				}
+				p.sendMessage(
+						Staff.getSTAFF_PREFIX() + ChatColor.GOLD + "Liste des " + nbmessage
+								+ " derniers messages des deux joueurs concernés: ");
+				p.sendMessage(" ");
+				for (ChatMessage cMessage : chatHistory) {
+					p.sendMessage(cMessage.getPrettyMessage());
+				}
+				p.sendMessage(" ");
+				p.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.GOLD + "Fin des messages.");
 			} else if (caseNumber == 28) {
-				Report toEdit = plugin.getReports().get(indexReport);
-				toEdit.changeStatus(ReportStatus.WAITING);
-				plugin.updateReport(indexReport, toEdit, p);
+				report.changeStatus(ReportStatus.WAITING);
+				plugin.updateReport(indexReport, report, p);
 				p.openInventory(
-						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin)
+						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin, fromArchive)
 								.getInventory());
 			} else if (caseNumber == 29) {
-				Report toEdit = plugin.getReports().get(indexReport);
-				toEdit.changeStatus(ReportStatus.INPROGRESS);
-				plugin.updateReport(indexReport, toEdit, p);
+				report.changeStatus(ReportStatus.INPROGRESS);
+				plugin.updateReport(indexReport, report, p);
 				p.openInventory(
-						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin)
+						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin, fromArchive)
 								.getInventory());
 			} else if (caseNumber == 30) {
-				Report toEdit = plugin.getReports().get(indexReport);
-				toEdit.changeStatus(ReportStatus.IMPORTANT);
-				plugin.updateReport(indexReport, toEdit, p);
+				report.changeStatus(ReportStatus.IMPORTANT);
+				plugin.updateReport(indexReport, report, p);
 				p.openInventory(
-						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin)
+						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin, fromArchive)
 								.getInventory());
 			} else if (caseNumber == 32) {
-				Report toEdit = plugin.getReports().get(indexReport);
-				toEdit.changeStatus(ReportStatus.CLASSED_FALSE);
-				plugin.updateReport(indexReport, toEdit, p);
+				report.changeStatus(ReportStatus.CLASSED_FALSE);
+				plugin.updateReport(indexReport, report, p);
 				p.openInventory(
-						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin)
+						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin, fromArchive)
 								.getInventory());
 			} else if (caseNumber == 33) {
-				Report toEdit = plugin.getReports().get(indexReport);
-				toEdit.changeStatus(ReportStatus.CLASSED_NOTSURE);
-				plugin.updateReport(indexReport, toEdit, p);
+				report.changeStatus(ReportStatus.CLASSED_NOTSURE);
+				plugin.updateReport(indexReport, report, p);
 				p.openInventory(
-						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin)
+						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin, fromArchive)
 								.getInventory());
 			} else if (caseNumber == 34) {
-				Report toEdit = plugin.getReports().get(indexReport);
-				toEdit.changeStatus(ReportStatus.CLASSED_TRUE);
-				plugin.updateReport(indexReport, toEdit, p);
+				report.changeStatus(ReportStatus.CLASSED_TRUE);
+				plugin.updateReport(indexReport, report, p);
 				p.openInventory(
-						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin)
+						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin, fromArchive)
 								.getInventory());
 			}
 		} else if (plugin.isFrozen(p) != -1) {

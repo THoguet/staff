@@ -87,17 +87,31 @@ public class Database {
 		return ret;
 	}
 
-	public static List<ChatMessage> loadchatHistoryFromDB(long maxDate, int quantity, UUID from) throws Exception {
+	public static List<ChatMessage> loadchatHistoryFromDB(long maxDate, int quantity, UUID from, UUID from2)
+			throws Exception {
 		Connection connection = Database.getConnection();
 		PreparedStatement statement;
-		try {
-			statement = connection.prepareStatement(
-					"SELECT * FROM (SELECT * FROM chatHistory WHERE messageDate < ? AND messageAuthor=? ORDER BY id DESC LIMIT ?) sub ORDER BY id ASC");
-			statement.setLong(0, maxDate);
-			statement.setObject(1, from);
-			statement.setInt(2, quantity);
-		} catch (SQLException e) {
-			throw new Exception("Cannot get chats from chatHistory " + e);
+		if (from2 == null) {
+			try {
+				statement = connection.prepareStatement(
+						"SELECT * FROM (SELECT * FROM chatHistory WHERE messageDate < ? AND messageAuthor=? ORDER BY id DESC LIMIT ?) sub ORDER BY id ASC");
+				statement.setLong(1, maxDate);
+				statement.setObject(2, from);
+				statement.setInt(3, quantity);
+			} catch (SQLException e) {
+				throw new Exception("Cannot get chats from chatHistory " + e);
+			}
+		} else {
+			try {
+				statement = connection.prepareStatement(
+						"SELECT * FROM (SELECT * FROM chatHistory WHERE messageDate < ? AND (messageAuthor=? OR messageAuthor =?) ORDER BY id DESC LIMIT ?) sub ORDER BY id ASC");
+				statement.setLong(1, maxDate);
+				statement.setObject(2, from);
+				statement.setObject(3, from2);
+				statement.setInt(4, quantity);
+			} catch (SQLException e) {
+				throw new Exception("Cannot get chats from chatHistory " + e);
+			}
 		}
 		ResultSet rows = statement.executeQuery();
 		List<ChatMessage> ret = new ArrayList<ChatMessage>(quantity);

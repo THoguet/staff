@@ -107,6 +107,13 @@ public class Staff extends JavaPlugin {
         return this.perms;
     }
 
+    public static String getNumberPlusZero(int time) {
+        if (time < 10) {
+            return "0" + time;
+        }
+        return String.valueOf(time);
+    }
+
     public void setStaff(List<OfflinePlayer> newlist) {
         this.staffList = newlist;
     }
@@ -164,6 +171,18 @@ public class Staff extends JavaPlugin {
 
     public int getNbReport() {
         return this.reports.size();
+    }
+
+    public static int getNumberAtEndStr(String analyze) {
+        String toConvert = "";
+        for (int i = analyze.length() - 1; i > 0; i--) {
+            char charTest = analyze.charAt(i);
+            if ((int) charTest >= 48 && (int) charTest <= 57) {
+                toConvert = String.join("", charTest + "", toConvert);
+            } else
+                return Integer.parseInt(toConvert);
+        }
+        return Integer.parseInt(toConvert);
     }
 
     public int getNbReport(ReportStatus status, int classed, int report) {
