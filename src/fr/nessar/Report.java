@@ -5,6 +5,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -33,14 +34,20 @@ public class Report {
 	}
 
 	public List<String> getLore() {
+		final int nbCharPerLineReport = 20;
 		List<String> reasonStrList = new ArrayList<>();
 		String copyReason = this.reportReason.toString();
-		if (copyReason.length() <= 15) {
+		if (copyReason.length() <= nbCharPerLineReport) {
 			reasonStrList.add(copyReason);
 		} else {
-			while (copyReason.length() > 15) {
-				reasonStrList.add(copyReason.subSequence(0, 15).toString());
-				copyReason = copyReason.substring(15);
+			while (copyReason.length() > nbCharPerLineReport) {
+				int cutAt = copyReason.substring(nbCharPerLineReport).indexOf(' ');
+				if (cutAt != -1) {
+					reasonStrList.add(copyReason.subSequence(0, nbCharPerLineReport + cutAt).toString());
+					copyReason = copyReason.substring(nbCharPerLineReport + cutAt + 1);
+				} else {
+					break;
+				}
 			}
 			reasonStrList.add(copyReason);
 		}

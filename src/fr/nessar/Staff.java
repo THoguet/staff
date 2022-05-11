@@ -3,6 +3,8 @@ package fr.nessar;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -66,6 +68,7 @@ public class Staff extends JavaPlugin {
         }
         for (Punishment punish : punishments) {
             Bukkit.getConsoleSender().sendMessage(punish.getMessage());
+            Bukkit.getConsoleSender().sendMessage(punish.getPunishedUUID().toString());
         }
         new UpdateStaffPerm(this).runTaskTimerAsynchronously(this, 0, 200);
         setupPermissions();
@@ -73,8 +76,10 @@ public class Staff extends JavaPlugin {
         getCommand("freeze").setExecutor(new CommandFreezeExecutor(this));
         getCommand("unfreeze").setExecutor(new CommandFreezeExecutor(this));
         getCommand("report").setExecutor(new CommandReportExecutor(this));
+        getCommand("ticket").setExecutor(new CommandTicketExecutor(this));
+        getCommand("tempban").setExecutor(new CommandPunishExecutor(this));
         // getCommand("staff").setTabCompleter(new StaffTabCompletion(this));
-        this.getServer().getPluginManager().registerEvents(new CommandTicketExecutor(this), this);
+        this.getServer().getPluginManager().registerEvents(new CommandTicketListener(), this);
         this.getServer().getPluginManager().registerEvents(new InventoryEvents(this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerEvent(this), this);
         Bukkit.getServer().getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Loaded.");
@@ -114,12 +119,66 @@ public class Staff extends JavaPlugin {
         return String.valueOf(time);
     }
 
+    public int isBanned(Player p) {
+        for (int i = 0; i < punishments.size(); i++) {
+            if (punishments.get(i).getPunishedUUID().equals(p.getUniqueId()))
+                return i;
+        }
+        return -1;
+    }
+
     public void setStaff(List<OfflinePlayer> newlist) {
         this.staffList = newlist;
     }
 
     public List<OfflinePlayer> getStaff() {
         return this.staffList;
+    }
+
+    public boolean editPunishment(UUID punishedPlayer, long endtime) {
+        for (int i = 0; i < punishments.size(); i++) {
+            if (punishments.get(i).getPunishedUUID().equals(punishedPlayer)) {
+                punishments.get(i).setEndTime(endtime);
+                try {
+                    Database.updatePunishment(punishments.get(i), i);
+                } catch (SQLException e) {
+                    return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean editPunishment(UUID punishedPlayer, String message) {
+        for (int i = 0; i < punishments.size(); i++) {
+            if (punishments.get(i).getPunishedUUID().equals(punishedPlayer)) {
+                punishments.get(i).setmessage(message);
+                try {
+                    Database.updatePunishment(punishments.get(i), i);
+                } catch (SQLException e) {
+                    return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void newPunishment(Player from, UUID to, String message, PunishType pType, long startTime, long endtime,
+            int reportId) {
+        Punishment newPunish = new Punishment(to, from.getUniqueId(), message, pType, startTime, endtime, reportId);
+        try {
+            Database.addPunishmentToDB(newPunish);
+        } catch (SQLException e) {
+            from.sendMessage(
+                    REPORT_PREFIX + ChatColor.RED + "Votre sanction n'a pas pu être prise en compte désolé." + e);
+            Bukkit.getConsoleSender().sendMessage(
+                    REPORT_PREFIX + ChatColor.RED + "Ajout a la DB impossible, punish non pris en compte." + e);
+            return;
+        }
+        from.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre sanction a bien été prise en compte !");
+        this.punishments.add(newPunish);
     }
 
     public void newReport(Player reporter, Player reported, String reportReason) {
@@ -133,7 +192,7 @@ public class Staff extends JavaPlugin {
                     REPORT_PREFIX + ChatColor.RED + "Ajout a la DB impossible, report non pris en compte." + e);
             return;
         }
-        reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre report a bien été prit en compte !");
+        reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre report a bien été pris en compte !");
         this.reports.add(freshReport);
     }
 
@@ -161,7 +220,7 @@ public class Staff extends JavaPlugin {
                     REPORT_PREFIX + ChatColor.RED + "Ajout a la DB impossible, ticket non pris en compte.");
             return;
         }
-        reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre ticket a bien été prit en compte !");
+        reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre ticket a bien été pris en compte !");
         this.reports.add(freshTicket);
     }
 

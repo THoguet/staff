@@ -79,9 +79,8 @@ public class Database {
 		while (rows.next()) {
 			ret.add(new Punishment(rows.getObject("punishedUUID", UUID.class),
 					rows.getObject("punisherUUID", UUID.class),
-					rows.getString("message"), PunishType.valueOf(rows.getInt("pType")), rows.getLong("startTime"),
-					rows.getLong("endtime"),
-					rows.getInt("reportID")));
+					rows.getString("message"), PunishType.valueOf(rows.getInt("punishmentType")),
+					rows.getLong("startTime"), rows.getLong("endtime"), rows.getInt("reportID")));
 		}
 		connection.close();
 		return ret;

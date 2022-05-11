@@ -17,11 +17,13 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.inventory.ItemStack;
 
 import fr.nessar.Menu.Static;
@@ -35,7 +37,14 @@ public class PlayerEvent implements Listener {
 	}
 
 	@EventHandler
-	public void onCommand(PlayerCommandPreprocessEvent event) {
+	public void onPlayerLoginEvent(PlayerLoginEvent event) {
+		int indexPunish = plugin.isBanned(event.getPlayer());
+		if (indexPunish != -1)
+			event.disallow(Result.KICK_BANNED, plugin.getPunishments().get(indexPunish).getBanStr());
+	}
+
+	@EventHandler
+	public void onPlayerCommandPreprocessEvent(PlayerCommandPreprocessEvent event) {
 		ChatMessage cMessage = new ChatMessage(event.getPlayer(), new Date().getTime(), event.getMessage());
 		try {
 			Database.addChatMessageToDB(cMessage);

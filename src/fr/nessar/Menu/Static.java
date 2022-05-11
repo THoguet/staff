@@ -38,9 +38,9 @@ public class Static {
 		lore.add(ChatColor.GRAY + "Réputation: "
 				+ Reputation.getRepStr(playerUUID, plugin.getReports(), plugin.getPunishments()));
 		lore.add(
-				ChatColor.GRAY + "Signalments effectués: " + ChatColor.BLUE
+				ChatColor.GRAY + "Signalements effectués: " + ChatColor.BLUE
 						+ Reputation.getReportsFrom(playerUUID, plugin.getReports()).size());
-		lore.add(ChatColor.GRAY + "Signalments reçus: " + ChatColor.BLUE
+		lore.add(ChatColor.GRAY + "Signalements reçus: " + ChatColor.BLUE
 				+ Reputation.getReportOf(playerUUID, plugin.getReports()).size());
 		lore.add(" ");
 		if (Bukkit.getPlayer(playerUUID) != null) {

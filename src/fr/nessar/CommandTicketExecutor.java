@@ -1,38 +1,42 @@
 package fr.nessar;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
-public class CommandTicketExecutor implements Listener {
+public class CommandTicketExecutor implements CommandExecutor {
 
 	private static final String PREFIX_PERMISSION = "staff.";
 	private Staff plugin;
-
-	private static final String USAGE = ChatColor.RED + "Usage: /// <message>";
 
 	public CommandTicketExecutor(Staff plugin) {
 		this.plugin = plugin;
 	}
 
-	private String permissionErrMessage() {
+	public String permissionErrMessage() {
 		return "You don't have the permission to do this command !";
 	}
 
-	@EventHandler(priority = EventPriority.HIGH)
-	public void onCommand(PlayerCommandPreprocessEvent event) {
-		Player p = event.getPlayer();
-		if (event.getMessage().startsWith("///")) {
-			p.sendMessage(USAGE);
+	@Override
+	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
+		if (!(sender instanceof Player)) {
+			Bukkit.getConsoleSender()
+					.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Only player can use this command.");
+			return true;
 		}
-		if (event.getMessage().startsWith("// ")) {
-			String reason = event.getMessage().substring(3);
-			event.setMessage("/ticket" + reason);
-			event.setCancelled(true);
+		Player p = (Player) sender;
+		if (commandLabel.equalsIgnoreCase("ticket") && args.length >= 1) {
+			String reason = "";
+			for (String arg : args) {
+				reason += arg += " ";
+			}
 			plugin.newTicket(p, reason);
+			return true;
 		}
+		sender.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Mauvais usage de la commande.");
+		return false;
 	}
 }

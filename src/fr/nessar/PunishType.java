@@ -5,7 +5,8 @@ public enum PunishType {
 	MUTE(1),
 	BAN(2),
 	REPORT(3),
-	TICKET(4);
+	TICKET(4),
+	COOLDOWN(5);
 
 	private final int punishCode;
 
@@ -31,6 +32,10 @@ public enum PunishType {
 
 	public boolean isTicket() {
 		return this == TICKET;
+	}
+
+	public boolean isCoolDown() {
+		return this == COOLDOWN;
 	}
 
 	public static PunishType valueOf(int punishCode) {
