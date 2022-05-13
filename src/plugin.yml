@@ -29,7 +29,19 @@ commands:
   tempban:
     description: Ban temporarily a player
     permission: staff.tempban
-    usage: "Usage: /command <player> [time] (reason)"
+    usage: "Usage: /<command> <player> [time] (reason)"
+  permaban:
+    description: ban permanently a player
+    permission: staff.permaban
+    usage: "Usage: /<command> <player> (reason)"
+  tempmute:
+    description: Mute temporarily a player
+    permission: staff.tempmute
+    usage: "Usage: /<command> <player> [time] (reason)"
+  permamute:
+    description: mute permanently a player
+    permission: staff.permamute
+    usage: "Usage: /<command> <player> (reason)"
 permissions:
   staff:
     description: allow base command staff

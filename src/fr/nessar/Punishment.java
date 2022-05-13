@@ -26,7 +26,10 @@ public class Punishment {
 
 	public Punishment(UUID punishedUUID, UUID punisherUUID, String message, PunishType pType, long startTime,
 			long endtime, int reportID) {
-		this.punisherName = Bukkit.getOfflinePlayer(punisherUUID).getName();
+		if (punisherUUID == null)
+			this.punisherName = "Console";
+		else
+			this.punisherName = Bukkit.getOfflinePlayer(punisherUUID).getName();
 		this.punishedUUID = punishedUUID;
 		this.punisherUUID = punisherUUID;
 		this.message = message;
@@ -38,7 +41,7 @@ public class Punishment {
 			case BAN:
 				Player punished = Bukkit.getPlayer(punishedUUID);
 				if (punished != null)
-					if (new Date().getTime() < endtime)
+					if (this.isActive())
 						punished.kickPlayer(this.getBanStr());
 				break;
 			default:
@@ -70,7 +73,7 @@ public class Punishment {
 
 	public String getTimeLeft() {
 		long timeLeft = this.timeLeft();
-		if (this.getDuration() < 0)
+		if (this.isPermanent())
 			return ChatColor.DARK_RED + ChatColor.UNDERLINE.toString() + "Permanent";
 		int year = 0;
 		int month = 0;
@@ -148,6 +151,18 @@ public class Punishment {
 		return l1 + "\n\n" + l2 + "\n\n" + l3 + "\n\n" + l4;
 	}
 
+	public String getMuteStr() {
+		String l1 = ChatColor.DARK_RED + ChatColor.BOLD.toString() + "VOUS ÊTES MUTE !";
+		String l2 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Raison:" + ChatColor.RESET + " " + this.message;
+		String l3 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Mute par:" + ChatColor.RESET + " "
+				+ this.punisherName;
+		String l4 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Temps restant:" + ChatColor.RESET + " "
+				+ this.getTimeLeft();
+		return ChatColor.RED + "===============================================\n" + l1 + "\n \n" + l2 + "\n \n" + l3
+				+ "\n \n"
+				+ l4 + ChatColor.RED + "===============================================";
+	}
+
 	public UUID getPunishedUUID() {
 		return punishedUUID;
 	}
@@ -182,5 +197,21 @@ public class Punishment {
 
 	public long getDuration() {
 		return this.endTime - this.startTime;
+	}
+
+	public boolean isPermanent() {
+		return this.endTime < 0;
+	}
+
+	public void setPunisher(UUID newPunisher) {
+		this.punisherUUID = newPunisher;
+		if (newPunisher != null)
+			this.punisherName = Bukkit.getOfflinePlayer(punisherUUID).getName();
+		else
+			this.punisherName = "Console";
+	}
+
+	public boolean isActive() {
+		return endTime < 0 || endTime > new Date().getTime();
 	}
 }

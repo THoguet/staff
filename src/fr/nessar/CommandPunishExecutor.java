@@ -28,7 +28,7 @@ public class CommandPunishExecutor implements CommandExecutor {
 			return -1;
 	}
 
-	public Date getDateFromStr(String analyze) {
+	public Date getDateFromStr(String analyze, long startTime) throws NumberFormatException {
 		int from = 0;
 		int nbYear = 0;
 		int nbMonth = 0;
@@ -70,40 +70,87 @@ public class CommandPunishExecutor implements CommandExecutor {
 					break;
 			}
 		}
-		long ret = new Date().getTime();
-		ret += Punishment.yearMs * nbYear;
-		ret += Punishment.monthMs * nbMonth;
-		ret += Punishment.dayMs * nbDay;
-		ret += Punishment.hourMs * nbHour;
-		ret += Punishment.minuteMs * nbMinute;
-		ret += Punishment.secondMs * nbSecond;
-		return (new Date(ret));
+		startTime += Punishment.yearMs * nbYear;
+		startTime += Punishment.monthMs * nbMonth;
+		startTime += Punishment.dayMs * nbDay;
+		startTime += Punishment.hourMs * nbHour;
+		startTime += Punishment.minuteMs * nbMinute;
+		startTime += Punishment.secondMs * nbSecond;
+		return (new Date(startTime));
+	}
+
+	public Date getDateFromStr(String analyze) {
+		return getDateFromStr(analyze, new Date().getTime());
 	}
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
-		if (commandLabel.equalsIgnoreCase("tempban") && args.length >= 2) {
+		if ((commandLabel.equalsIgnoreCase("tempban") || commandLabel.equalsIgnoreCase("tempmute")
+				|| commandLabel.equalsIgnoreCase("tempreport") || commandLabel.equalsIgnoreCase("tempticket"))
+				&& args.length >= 2
+				|| ((commandLabel.equalsIgnoreCase("permaban") || commandLabel.equalsIgnoreCase("permamute"))
+						&& args.length >= 1)) {
+			PunishType pType = PunishType.NULL;
+			if (commandLabel.equalsIgnoreCase("tempban") || commandLabel.equalsIgnoreCase("permaban"))
+				pType = PunishType.BAN;
+			else if (commandLabel.equalsIgnoreCase("tempmute") || commandLabel.equalsIgnoreCase("permamute"))
+				pType = PunishType.MUTE;
+			else if (commandLabel.equalsIgnoreCase("tempreport"))
+				pType = PunishType.REPORT;
+			else if (commandLabel.equalsIgnoreCase("tempticket"))
+				pType = PunishType.TICKET;
+			int startArgs = 0;
+			int perma = 0;
+			int addOrRemove = 0; // -1 == remove / 0 == set / 1 == add
+			long endTime;
+			try {
+				if (commandLabel.equalsIgnoreCase("permaban") || commandLabel.equalsIgnoreCase("permamute")) {
+					endTime = -1;
+					perma = 1;
+				} else if (args[0].equals("+")) {
+					startArgs++;
+					addOrRemove = 1;
+					endTime = getDateFromStr(args[startArgs + 1], 0).getTime();
+				} else if (args[0].equals("-")) {
+					startArgs++;
+					addOrRemove = -1;
+					endTime = getDateFromStr(args[startArgs + 1], 0).getTime();
+				} else {
+					endTime = getDateFromStr(args[startArgs + 1]).getTime();
+				}
+			} catch (NumberFormatException e) {
+				sender.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Temps Incorrect.");
+				return false;
+			}
 			String reason = "";
-			for (int i = 2; i < args.length; i++) {
+			for (int i = startArgs + 2 - perma; i < args.length; i++) {
 				reason += args[i] += " ";
 			}
+			Player p = null;
 			if (sender instanceof Player) {
-				UUID punishedUUID;
-				Player punished = Bukkit.getPlayer(args[0]);
-				Date endtime = getDateFromStr(args[1]);
-				if (punished == null) {
-					Bukkit.getScheduler().runTaskAsynchronously(this.plugin,
-							new TempBanOfflinePlayer(args[0], sender, this.plugin, reason, endtime, PunishType.BAN));
-					return true;
+				p = (Player) sender;
+			}
+			UUID punishedUUID;
+			Player punished = Bukkit.getPlayer(args[startArgs + 0]);
+			if (punished == null) {
+				Bukkit.getScheduler().runTaskAsynchronously(this.plugin,
+						new PunishOfflinePlayer(args[startArgs + 0], p, this.plugin, reason, endTime,
+								addOrRemove, pType));
+				return true;
+			} else {
+				punishedUUID = punished.getUniqueId();
+				int pID = plugin.getActivePunishId(punishedUUID, pType);
+				if (pID != -1) {
+					if (addOrRemove == -1) {
+						endTime = plugin.getPunishments().get(pID).getEndTime() - endTime;
+					} else if (addOrRemove == 1)
+						endTime = plugin.getPunishments().get(pID).getEndTime() + endTime;
+					plugin.editPunishment(pID, punishedUUID, p, endTime);
 				} else {
-					punishedUUID = punished.getUniqueId();
-					Bukkit.broadcastMessage(punishedUUID.toString());
-					Bukkit.broadcastMessage(reason);
-					if (punishedUUID != null)
-						plugin.newPunishment((Player) sender, punishedUUID, reason, PunishType.BAN,
-								new Date().getTime(), endtime.getTime(), -1);
-					return true;
+					plugin.newPunishment(p, punishedUUID, reason, pType, new Date().getTime(),
+							endTime, -1);
 				}
+				return true;
 			}
 		}
 		sender.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Mauvais usage de la commande.");

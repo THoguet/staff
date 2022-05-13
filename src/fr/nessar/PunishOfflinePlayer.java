@@ -9,15 +9,17 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 
-public class TempBanOfflinePlayer implements Runnable {
+public class PunishOfflinePlayer implements Runnable {
 	private String pseudo;
 	private CommandSender sender;
 	private Staff plugin;
 	private String reason;
 	private PunishType pType;
-	private Date endTime;
+	private long endTime;
+	private int addOrRemove;
 
-	public TempBanOfflinePlayer(String pseudo, CommandSender sender, Staff plugin, String reason, Date endtime,
+	public PunishOfflinePlayer(String pseudo, CommandSender sender, Staff plugin, String reason, long endtime,
+			int addOrRemove,
 			PunishType pType) {
 		this.pseudo = pseudo;
 		this.sender = sender;
@@ -25,6 +27,7 @@ public class TempBanOfflinePlayer implements Runnable {
 		this.reason = reason;
 		this.endTime = endtime;
 		this.pType = pType;
+		this.addOrRemove = addOrRemove;
 	}
 
 	public String addChar(String str, char ch, int position) {
@@ -53,7 +56,13 @@ public class TempBanOfflinePlayer implements Runnable {
 		response = addChar(response, '-', 18);
 		response = addChar(response, '-', 23);
 		UUID punishedUUID = UUID.fromString(response);
-		Bukkit.getScheduler().runTask(this.plugin,
-				new addPunishTask(sender, plugin, reason, this.endTime, punishedUUID, pType));
+		int pID = plugin.getActivePunishId(punishedUUID, this.pType);
+		if (pID != -1)
+			Bukkit.getScheduler().runTask(this.plugin,
+					new addPunishTask(sender, plugin, null, this.endTime, this.addOrRemove, punishedUUID, pType, true,
+							pID));
+		else
+			Bukkit.getScheduler().runTask(this.plugin,
+					new addPunishTask(sender, plugin, reason, this.endTime, punishedUUID, pType));
 	}
 }

@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -67,19 +68,24 @@ public class Staff extends JavaPlugin {
             Bukkit.getConsoleSender().sendMessage(t.getName());
         }
         for (Punishment punish : punishments) {
-            Bukkit.getConsoleSender().sendMessage(punish.getMessage());
+            Bukkit.getConsoleSender()
+                    .sendMessage((punish.isActive() ? ChatColor.GREEN : ChatColor.RED) + punish.getMessage());
             Bukkit.getConsoleSender().sendMessage(punish.getPunishedUUID().toString());
         }
         new UpdateStaffPerm(this).runTaskTimerAsynchronously(this, 0, 200);
         setupPermissions();
+        CommandExecutor punishExec = new CommandPunishExecutor(this);
         getCommand("staff").setExecutor(new CommandStaffExecutor(this));
         getCommand("freeze").setExecutor(new CommandFreezeExecutor(this));
         getCommand("unfreeze").setExecutor(new CommandFreezeExecutor(this));
         getCommand("report").setExecutor(new CommandReportExecutor(this));
         getCommand("ticket").setExecutor(new CommandTicketExecutor(this));
-        getCommand("tempban").setExecutor(new CommandPunishExecutor(this));
+        getCommand("tempban").setExecutor(punishExec);
+        getCommand("permaban").setExecutor(punishExec);
+        getCommand("tempmute").setExecutor(punishExec);
+        getCommand("permamute").setExecutor(punishExec);
         // getCommand("staff").setTabCompleter(new StaffTabCompletion(this));
-        this.getServer().getPluginManager().registerEvents(new CommandTicketListener(), this);
+        this.getServer().getPluginManager().registerEvents(new CommandListener(), this);
         this.getServer().getPluginManager().registerEvents(new InventoryEvents(this), this);
         this.getServer().getPluginManager().registerEvents(new PlayerEvent(this), this);
         Bukkit.getServer().getConsoleSender().sendMessage(Staff.STAFF_PREFIX + ChatColor.GREEN + "Loaded.");
@@ -119,9 +125,10 @@ public class Staff extends JavaPlugin {
         return String.valueOf(time);
     }
 
-    public int isBanned(Player p) {
+    public int isPunished(Player p, PunishType pType) {
         for (int i = 0; i < punishments.size(); i++) {
-            if (punishments.get(i).getPunishedUUID().equals(p.getUniqueId()))
+            if (punishments.get(i).getPunishedUUID().equals(p.getUniqueId()) && punishments.get(i).isActive()
+                    && punishments.get(i).getpType().equals(pType))
                 return i;
         }
         return -1;
@@ -135,39 +142,58 @@ public class Staff extends JavaPlugin {
         return this.staffList;
     }
 
-    public boolean editPunishment(UUID punishedPlayer, long endtime) {
-        for (int i = 0; i < punishments.size(); i++) {
-            if (punishments.get(i).getPunishedUUID().equals(punishedPlayer)) {
-                punishments.get(i).setEndTime(endtime);
-                try {
-                    Database.updatePunishment(punishments.get(i), i);
-                } catch (SQLException e) {
-                    return false;
-                }
-                return true;
-            }
+    public boolean editPunishment(int id, UUID punishedPlayer, Player editor, long endtime) {
+        String nameEditor = "Console";
+        if (editor != null)
+            nameEditor = editor.getName();
+        try {
+            if (endtime != -1)
+                punishments.get(id).setEndTime(endtime);
+            punishments.get(id)
+                    .setmessage(punishments.get(id).getMessage() + ChatColor.GRAY + "(Modifié par " + nameEditor + ")");
+            Database.updatePunishment(punishments.get(id), id + 1);
+        } catch (SQLException e) {
+            if (editor == null)
+                Bukkit.getConsoleSender()
+                        .sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Impossible de modifier la sanction.");
+            else
+                editor.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Impossible de modifier la sanction.");
+            return false;
+        } catch (IndexOutOfBoundsException e) {
+            if (editor == null)
+                Bukkit.getConsoleSender()
+                        .sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Impossible de modifier la sanction.");
+            else
+                editor.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Impossible de modifier la sanction.");
+            return false;
         }
-        return false;
+        if (editor == null)
+            Bukkit.getConsoleSender()
+                    .sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.GREEN + "Sanction #" + id + " modifié.");
+        else
+            editor.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.GREEN + "Sanction #" + id + " modifié.");
+        return true;
     }
 
-    public boolean editPunishment(UUID punishedPlayer, String message) {
+    public int getActivePunishId(UUID punishedPlayer, PunishType pType) {
         for (int i = 0; i < punishments.size(); i++) {
-            if (punishments.get(i).getPunishedUUID().equals(punishedPlayer)) {
-                punishments.get(i).setmessage(message);
-                try {
-                    Database.updatePunishment(punishments.get(i), i);
-                } catch (SQLException e) {
-                    return false;
-                }
-                return true;
-            }
+            Punishment p = this.punishments.get(i);
+            if (p.getPunishedUUID().equals(punishedPlayer) && p.getpType().equals(pType) && p.isActive())
+                return i;
         }
-        return false;
+        return -1;
     }
 
     public void newPunishment(Player from, UUID to, String message, PunishType pType, long startTime, long endtime,
             int reportId) {
-        Punishment newPunish = new Punishment(to, from.getUniqueId(), message, pType, startTime, endtime, reportId);
+        if (message == null || message.equals("")) {
+            message = "Aucune raison spécifié.";
+        }
+        UUID UUIDfrom = null;
+        if (from != null) {
+            UUIDfrom = from.getUniqueId();
+        }
+        Punishment newPunish = new Punishment(to, UUIDfrom, message, pType, startTime, endtime, reportId);
         try {
             Database.addPunishmentToDB(newPunish);
         } catch (SQLException e) {
@@ -177,7 +203,12 @@ public class Staff extends JavaPlugin {
                     REPORT_PREFIX + ChatColor.RED + "Ajout a la DB impossible, punish non pris en compte." + e);
             return;
         }
-        from.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre sanction a bien été prise en compte !");
+        if (from == null)
+            Bukkit.getConsoleSender().sendMessage(
+                    Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre sanction a bien été prise en compte !");
+        else
+            from.sendMessage(
+                    Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre sanction a bien été prise en compte !");
         this.punishments.add(newPunish);
     }
 
