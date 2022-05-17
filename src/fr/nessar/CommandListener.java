@@ -33,7 +33,7 @@ public class CommandListener implements Listener {
 		}
 		if (event.getMessage().startsWith("/ban")) {
 			if (event.getMessage().startsWith("/ban ")) {
-				String playerNameAndReason = event.getMessage().substring(4);
+				String playerNameAndReason = event.getMessage().substring(5);
 				event.setMessage("/permaban " + playerNameAndReason);
 			} else {
 				event.setCancelled(true);

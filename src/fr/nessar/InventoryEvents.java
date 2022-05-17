@@ -1,6 +1,7 @@
 package fr.nessar;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -211,6 +212,10 @@ public class InventoryEvents implements Listener {
 			} else if (caseNumber == 22) {
 				report.changeStatus(ReportStatus.CLASSED_ABUSIVE);
 				plugin.updateReport(indexReport, report, p);
+				if (report.isReport())
+					plugin.newPunishment((Player) event.getWhoClicked(),
+							UUID.fromString(report.getReporter().getUniqueId()), "Report abusif", PunishType.REPORT,
+							new Date().getTime(), new Date().getTime() + Punishment.hourMs, indexReport);
 				p.openInventory(
 						new EditReport(plugin.getReports().get(indexReport), indexReport, plugin)
 								.getInventory());

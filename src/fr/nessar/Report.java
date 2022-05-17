@@ -5,32 +5,39 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
+
 public class Report {
+	private static final long cooldownTime = Punishment.minuteMs * 10;
 	private boolean report;
 	private PlayerSave reporter;
 	private PlayerSave reported;
 	private String reportReason;
 	private long reportTime;
 	private ReportStatus status;
+	private boolean ignoreCoolDown;
 
 	public Report(Player reporter, Player reported, String reportReason, long reportTime, boolean report,
 			ReportStatus status) {
 		this(new PlayerSave(reporter), report ? new PlayerSave(reported) : null, reportReason, reportTime, report,
-				status);
+				status, false);
 	}
 
 	public Report(PlayerSave reporter, PlayerSave reported, String reportReason, long reportTime, boolean report,
-			ReportStatus status) {
+			ReportStatus status, boolean ignoreCoolDown) {
 		this.reporter = reporter;
 		this.reported = reported;
 		this.reportReason = reportReason;
 		this.reportTime = reportTime;
 		this.report = report;
 		this.status = status;
+		this.ignoreCoolDown = ignoreCoolDown;
 	}
 
 	public List<String> getLore() {
@@ -81,6 +88,27 @@ public class Report {
 		return ret;
 	}
 
+	public TextComponent getChatMessage(int index) {
+		String loreOneString = "";
+		for (String lore : this.getLore()) {
+			loreOneString += lore + "\n";
+		}
+		TextComponent message = new TextComponent(
+				(this.isTicket() ? ChatColor.BLUE + "Ticket " : ChatColor.RED + "Report ") + ChatColor.GRAY + "#"
+						+ index);
+		message.setHoverEvent(
+				new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(loreOneString).create()));
+		message.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "staff editreport " + index));
+		return message;
+	}
+
+	// ["",{"text":"[","color":"gray"},{"text":"Report","color":"gold"},{"text":"]","color":"gray"},{"text":"
+	// Nouveau ","color":"green"},{"text":"Report
+	// ","color":"red","clickEvent":{"action":"run_command","value":"editreport
+	// 1"},"hoverEvent":{"action":"show_text","value":"testing new
+	// testnewnewtest"}},{"text":"#1","color":"gray","clickEvent":{"action":"run_command","value":"editreport
+	// 1"},"hoverEvent":{"action":"show_text","value":"testing new
+	// testnewnewtest"}}]
 	public Report(Player reporter, Player reported, String reportReason, boolean report) {
 		this(reporter, reported, reportReason, new Date().getTime(), report, ReportStatus.WAITING);
 	}
@@ -91,6 +119,10 @@ public class Report {
 
 	public void changeStatus(ReportStatus newStatus) {
 		this.status = newStatus;
+	}
+
+	public boolean getIgnoreCooldown() {
+		return this.ignoreCoolDown;
 	}
 
 	public ReportStatus getStatus() {
@@ -115,6 +147,10 @@ public class Report {
 
 	public PlayerSave getReported() {
 		return this.reported;
+	}
+
+	public boolean isInCooldown() {
+		return !this.ignoreCoolDown && new Date().getTime() > this.reportTime + cooldownTime;
 	}
 
 	public String getReportReason() {

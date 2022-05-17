@@ -28,7 +28,7 @@ public class CommandPunishExecutor implements CommandExecutor {
 			return -1;
 	}
 
-	public Date getDateFromStr(String analyze, long startTime) throws NumberFormatException {
+	public long getDateFromStr(String analyze, long startTime) throws NumberFormatException {
 		int from = 0;
 		int nbYear = 0;
 		int nbMonth = 0;
@@ -76,10 +76,10 @@ public class CommandPunishExecutor implements CommandExecutor {
 		startTime += Punishment.hourMs * nbHour;
 		startTime += Punishment.minuteMs * nbMinute;
 		startTime += Punishment.secondMs * nbSecond;
-		return (new Date(startTime));
+		return startTime;
 	}
 
-	public Date getDateFromStr(String analyze) {
+	public long getDateFromStr(String analyze) {
 		return getDateFromStr(analyze, new Date().getTime());
 	}
 
@@ -95,28 +95,28 @@ public class CommandPunishExecutor implements CommandExecutor {
 				pType = PunishType.BAN;
 			else if (commandLabel.equalsIgnoreCase("tempmute") || commandLabel.equalsIgnoreCase("permamute"))
 				pType = PunishType.MUTE;
-			else if (commandLabel.equalsIgnoreCase("tempreport"))
+			else if (commandLabel.equalsIgnoreCase("tempreport") || commandLabel.equalsIgnoreCase("permareport"))
 				pType = PunishType.REPORT;
-			else if (commandLabel.equalsIgnoreCase("tempticket"))
+			else if (commandLabel.equalsIgnoreCase("tempticket") || commandLabel.equalsIgnoreCase("permaticket"))
 				pType = PunishType.TICKET;
 			int startArgs = 0;
 			int perma = 0;
 			int addOrRemove = 0; // -1 == remove / 0 == set / 1 == add
 			long endTime;
 			try {
-				if (commandLabel.equalsIgnoreCase("permaban") || commandLabel.equalsIgnoreCase("permamute")) {
+				if (commandLabel.startsWith("perma")) {
 					endTime = -1;
 					perma = 1;
 				} else if (args[0].equals("+")) {
 					startArgs++;
 					addOrRemove = 1;
-					endTime = getDateFromStr(args[startArgs + 1], 0).getTime();
+					endTime = getDateFromStr(args[startArgs + 1], 0);
 				} else if (args[0].equals("-")) {
 					startArgs++;
 					addOrRemove = -1;
-					endTime = getDateFromStr(args[startArgs + 1], 0).getTime();
+					endTime = getDateFromStr(args[startArgs + 1], 0);
 				} else {
-					endTime = getDateFromStr(args[startArgs + 1]).getTime();
+					endTime = getDateFromStr(args[startArgs + 1]);
 				}
 			} catch (NumberFormatException e) {
 				sender.sendMessage(Staff.getSTAFF_PREFIX() + ChatColor.RED + "Temps Incorrect.");

@@ -9,6 +9,8 @@ import org.bukkit.entity.Player;
 
 public class CommandTicketExecutor implements CommandExecutor {
 
+	private static final int cooldownMinute = 10;
+
 	private static final String PREFIX_PERMISSION = "staff.";
 	private Staff plugin;
 
@@ -29,6 +31,18 @@ public class CommandTicketExecutor implements CommandExecutor {
 		}
 		Player p = (Player) sender;
 		if (commandLabel.equalsIgnoreCase("ticket") && args.length >= 1) {
+			if (plugin.isLastReportInCoolDown(p, false)) {
+				p.sendMessage(
+						Staff.getREPORT_PREFIX() + ChatColor.RED + "Vous avez déjà fait un ticket il y a moins de "
+								+ cooldownMinute + " minutes.");
+				return true;
+			} else {
+				int index = plugin.isPunished(p, PunishType.TICKET);
+				if (index != -1) {
+					p.sendMessage(plugin.getPunishments().get(index).getPrettyMessage());
+					return true;
+				}
+			}
 			String reason = "";
 			for (String arg : args) {
 				reason += arg += " ";

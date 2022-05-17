@@ -42,6 +42,22 @@ commands:
     description: mute permanently a player
     permission: staff.permamute
     usage: "Usage: /<command> <player> (reason)"
+  tempreport:
+    description: block report from a player temporarily
+    permission: staff.tempreport
+    usage: "Usage: /<command> <player> [time] (reason)"
+  permareport:
+    description: block report from a player
+    permission: staff.permareport
+    usage: "Usage: /<command> <player> (reason)"
+  tempticket:
+    description: block ticket from a player temporarily
+    permission: staff.tempticket
+    usage: "Usage: /<command> <player> [time] (reason)"
+  permaticket:
+    description: block ticket from a player
+    permission: staff.permaticket
+    usage: "Usage: /<command> <player> (reason)"
 permissions:
   staff:
     description: allow base command staff

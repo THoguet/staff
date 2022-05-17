@@ -2,6 +2,7 @@ package fr.nessar;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -84,6 +85,10 @@ public class Staff extends JavaPlugin {
         getCommand("permaban").setExecutor(punishExec);
         getCommand("tempmute").setExecutor(punishExec);
         getCommand("permamute").setExecutor(punishExec);
+        getCommand("tempticket").setExecutor(punishExec);
+        getCommand("permaticket").setExecutor(punishExec);
+        getCommand("tempreport").setExecutor(punishExec);
+        getCommand("permareport").setExecutor(punishExec);
         // getCommand("staff").setTabCompleter(new StaffTabCompletion(this));
         this.getServer().getPluginManager().registerEvents(new CommandListener(), this);
         this.getServer().getPluginManager().registerEvents(new InventoryEvents(this), this);
@@ -116,6 +121,14 @@ public class Staff extends JavaPlugin {
 
     public Permission getPerms() {
         return this.perms;
+    }
+
+    public void notifyStaff(String message) {
+        for (OfflinePlayer offlinePlayer : staffList) {
+            Player isOnline = Bukkit.getPlayer(offlinePlayer.getUniqueId());
+            if (isOnline != null)
+                isOnline.sendMessage(message);
+        }
     }
 
     public static String getNumberPlusZero(int time) {
@@ -205,10 +218,10 @@ public class Staff extends JavaPlugin {
         }
         if (from == null)
             Bukkit.getConsoleSender().sendMessage(
-                    Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre sanction a bien été prise en compte !");
+                    Staff.getSTAFF_PREFIX() + ChatColor.GREEN + "Votre sanction a bien été prise en compte !");
         else
             from.sendMessage(
-                    Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre sanction a bien été prise en compte !");
+                    Staff.getSTAFF_PREFIX() + ChatColor.GREEN + "Votre sanction a bien été prise en compte !");
         this.punishments.add(newPunish);
     }
 
@@ -225,6 +238,8 @@ public class Staff extends JavaPlugin {
         }
         reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre report a bien été pris en compte !");
         this.reports.add(freshReport);
+        this.notifyStaff(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Nouveau "
+                + freshReport.getChatMessage(this.reports.size() - 1)); // TODO
     }
 
     public void updateReport(int indexReportToUpdate, Report newReport, Player updater) {
@@ -239,6 +254,9 @@ public class Staff extends JavaPlugin {
         }
         updater.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Le report a bien été mis à jour !");
         this.reports.set(indexReportToUpdate, newReport);
+        Player reporter = Bukkit.getPlayer(UUID.fromString(newReport.getReporter().getUniqueId()));
+        if (reporter != null)
+            reporter.sendMessage(Staff.getREPORT_PREFIX() + "Votre report a été actualisé"); // TODO
     }
 
     public void newTicket(Player reporter, String reportReason) {
@@ -253,6 +271,8 @@ public class Staff extends JavaPlugin {
         }
         reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre ticket a bien été pris en compte !");
         this.reports.add(freshTicket);
+        this.notifyStaff(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Nouveau "
+                + freshTicket.getChatMessage((this.reports.size() - 1)).toLegacyText()); // TODO
     }
 
     public static String getUrlDB() {
@@ -261,6 +281,15 @@ public class Staff extends JavaPlugin {
 
     public int getNbReport() {
         return this.reports.size();
+    }
+
+    public boolean isLastReportInCoolDown(Player p, boolean report) {
+        for (int i = reports.size() - 1; i > 0; i--) {
+            if (reports.get(i).getReporter().getUniqueId().equals(p.getUniqueId().toString())
+                    && reports.get(i).isReport() == report)
+                return reports.get(i).isInCooldown();
+        }
+        return false;
     }
 
     public static int getNumberAtEndStr(String analyze) {

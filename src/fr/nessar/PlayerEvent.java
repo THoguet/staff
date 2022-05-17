@@ -40,7 +40,7 @@ public class PlayerEvent implements Listener {
 	public void onPlayerLoginEvent(PlayerLoginEvent event) {
 		int indexPunish = plugin.isPunished(event.getPlayer(), PunishType.BAN);
 		if (indexPunish != -1)
-			event.disallow(Result.KICK_BANNED, plugin.getPunishments().get(indexPunish).getBanStr());
+			event.disallow(Result.KICK_BANNED, plugin.getPunishments().get(indexPunish).getPrettyMessage());
 	}
 
 	@EventHandler
@@ -60,7 +60,8 @@ public class PlayerEvent implements Listener {
 		int punishId = plugin.isPunished(event.getPlayer(), PunishType.MUTE);
 		if (punishId != -1) {
 			event.setCancelled(true);
-			event.getPlayer().sendMessage(plugin.getPunishments().get(punishId).getMuteStr());
+			event.getPlayer().sendMessage(plugin.getPunishments().get(punishId).getPrettyMessage());
+			event.setMessage(ChatColor.LIGHT_PURPLE + "[MUTED] " + event.getMessage());
 		}
 		try {
 			Database.addChatMessageToDB(cMessage);

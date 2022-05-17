@@ -37,16 +37,16 @@ public class Punishment {
 		this.startTime = startTime;
 		this.endTime = endtime;
 		this.reportID = reportID;
-		switch (this.pType) {
-			case BAN:
-				Player punished = Bukkit.getPlayer(punishedUUID);
-				if (punished != null)
-					if (this.isActive())
-						punished.kickPlayer(this.getBanStr());
-				break;
-			default:
-				break;
-		}
+		Player punished = Bukkit.getPlayer(punishedUUID);
+		if (punished != null && this.isActive())
+			switch (this.pType) {
+				case BAN:
+					punished.kickPlayer(this.getPrettyMessage());
+					break;
+				default:
+					punished.sendMessage(this.getPrettyMessage());
+					break;
+			}
 	}
 
 	public String getPunisherName() {
@@ -141,26 +141,33 @@ public class Punishment {
 		return yearStr + monthStr + dayStr + hourStr + minuteStr + secondStr;
 	}
 
-	public String getBanStr() {
-		String l1 = ChatColor.DARK_RED + ChatColor.BOLD.toString() + "VOUS ÊTES BANNI !";
-		String l2 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Raison:" + ChatColor.RESET + " " + this.message;
-		String l3 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Banni par:" + ChatColor.RESET + " "
+	public String getPrettyMessage() {
+		String l1;
+		String l2 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Raison:" + ChatColor.RESET + " "
+				+ this.message;
+		String l3 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Sanctionné par:" + ChatColor.RESET + " "
 				+ this.punisherName;
 		String l4 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Temps restant:" + ChatColor.RESET + " "
 				+ this.getTimeLeft();
-		return l1 + "\n\n" + l2 + "\n\n" + l3 + "\n\n" + l4;
-	}
-
-	public String getMuteStr() {
-		String l1 = ChatColor.DARK_RED + ChatColor.BOLD.toString() + "VOUS ÊTES MUTE !";
-		String l2 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Raison:" + ChatColor.RESET + " " + this.message;
-		String l3 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Mute par:" + ChatColor.RESET + " "
-				+ this.punisherName;
-		String l4 = ChatColor.GOLD + ChatColor.UNDERLINE.toString() + "Temps restant:" + ChatColor.RESET + " "
-				+ this.getTimeLeft();
-		return ChatColor.RED + "===============================================\n" + l1 + "\n \n" + l2 + "\n \n" + l3
-				+ "\n \n"
-				+ l4 + ChatColor.RED + "===============================================";
+		switch (this.pType) {
+			case BAN:
+				l1 = ChatColor.DARK_RED + ChatColor.BOLD.toString() + "VOUS ÊTES BANNI !";
+				return l1 + "\n\n" + l2 + "\n\n" + l3 + "\n\n" + l4;
+			case MUTE:
+				l1 = ChatColor.DARK_RED + ChatColor.BOLD.toString() + "VOUS ÊTES MUTE !";
+				return ChatColor.RED + "===============================================\n" + l1 + "\n \n" + l2 + "\n \n"
+						+ l3 + "\n \n" + l4 + ChatColor.RED + "===============================================";
+			case REPORT:
+				l1 = ChatColor.DARK_RED + ChatColor.BOLD.toString() + "VOUS ÊTES INTERDIT DE REPORT !";
+				return ChatColor.RED + "===============================================\n" + l1 + "\n \n" + l2 + "\n \n"
+						+ l3 + "\n \n" + l4 + ChatColor.RED + "===============================================";
+			case TICKET:
+				l1 = ChatColor.DARK_RED + ChatColor.BOLD.toString() + "VOUS ÊTES INTERDIT DE TICKET !";
+				return ChatColor.RED + "===============================================\n" + l1 + "\n \n" + l2 + "\n \n"
+						+ l3 + "\n \n" + l4 + ChatColor.RED + "===============================================";
+			default:
+				return "";
+		}
 	}
 
 	public UUID getPunishedUUID() {

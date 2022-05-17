@@ -34,7 +34,7 @@ public class Database {
 			Connection connection = Database.getConnection();
 			Statement statement = connection.createStatement();
 			statement.execute(
-					"CREATE TABLE IF NOT EXISTS reports(id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, report BOOLEAN, reportStatus TINYINT, reportTime BIGINT, reportReason VARCHAR(256), reported JAVA_OBJECT, reporter JAVA_OBJECT);");
+					"CREATE TABLE IF NOT EXISTS reports(id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, report BOOLEAN, reportStatus TINYINT, reportTime BIGINT, reportReason VARCHAR(256), reported JAVA_OBJECT, reporter JAVA_OBJECT, ignoreCooldown BOOLEAN);");
 			statement.execute(
 					"CREATE TABLE IF NOT EXISTS chatHistory(id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, messageDate BIGINT, messageAuthor UUID, message VARCHAR(256));");
 			statement.execute(
@@ -136,7 +136,8 @@ public class Database {
 			ret.add(new Report(rows.getObject("reporter", PlayerSave.class),
 					rows.getObject("reported", PlayerSave.class),
 					rows.getString("reportReason"), rows.getLong("reportTime"), rows.getBoolean("report"),
-					ReportStatus.getReportStatusFromInt(rows.getInt("reportStatus"))));
+					ReportStatus.getReportStatusFromInt(rows.getInt("reportStatus")),
+					rows.getBoolean("ignoreCooldown")));
 		}
 		connection.close();
 		return ret;
@@ -146,13 +147,14 @@ public class Database {
 		Connection conn = Database.getConnection();
 		PreparedStatement statement;
 		statement = conn.prepareStatement(
-				"INSERT INTO reports(report, reportStatus, reportTime, reportReason, reported, reporter) VALUES (?,?,?,?,?,?)");
+				"INSERT INTO reports(report, reportStatus, reportTime, reportReason, reported, reporter, ignoreCooldown) VALUES (?,?,?,?,?,?,?)");
 		statement.setBoolean(1, r.isReport());
 		statement.setInt(2, r.getStatus().getStatusCode());
 		statement.setLong(3, r.getReportTime());
 		statement.setString(4, r.getReportReason());
 		statement.setObject(5, r.getReported());
 		statement.setObject(6, r.getReporter());
+		statement.setBoolean(7, r.getIgnoreCooldown());
 		statement.execute();
 		conn.close();
 	}
@@ -175,7 +177,7 @@ public class Database {
 		Connection conn = Database.getConnection();
 		PreparedStatement statement;
 		statement = conn.prepareStatement(
-				"INSERT INTO punishments(punishedUUID,message,punishmentType,endtime,startTime, punisherUUID,reportID) VALUES (?,?,?,?,?,?,?)");
+				"INSERT INTO punishments(punishedUUID,message,punishmentType,endtime,startTime, punisherUUID, reportID) VALUES (?,?,?,?,?,?,?)");
 		statement.setObject(1, punishment.getPunishedUUID());
 		statement.setString(2, punishment.getMessage());
 		statement.setInt(3, punishment.getpType().getPunishCode());
@@ -203,14 +205,15 @@ public class Database {
 		Connection conn = Database.getConnection();
 		PreparedStatement statement;
 		statement = conn.prepareStatement(
-				"UPDATE reports SET report = ?, reportStatus = ?, reportTime = ?, reportReason = ?, reported = ?, reporter = ? WHERE id = ?");
+				"UPDATE reports SET report = ?, reportStatus = ?, reportTime = ?, reportReason = ?, reported = ?, reporter = ?, ignoreCooldown = ? WHERE id = ?");
 		statement.setBoolean(1, r.isReport());
 		statement.setInt(2, r.getStatus().getStatusCode());
 		statement.setLong(3, r.getReportTime());
 		statement.setString(4, r.getReportReason());
 		statement.setObject(5, r.getReported());
 		statement.setObject(6, r.getReporter());
-		statement.setInt(7, index);
+		statement.setBoolean(7, r.getIgnoreCooldown());
+		statement.setInt(8, index);
 		statement.execute();
 		conn.close();
 	}

@@ -9,6 +9,8 @@ import org.bukkit.entity.Player;
 
 public class CommandReportExecutor implements CommandExecutor {
 
+	private static final int cooldownMinute = 10;
+
 	private static final String PREFIX_PERMISSION = "staff.";
 	private Staff plugin;
 
@@ -29,10 +31,23 @@ public class CommandReportExecutor implements CommandExecutor {
 		}
 		Player p = (Player) sender;
 		if (commandLabel.equalsIgnoreCase("report")) {
+			if (plugin.isLastReportInCoolDown(p, true)) {
+				p.sendMessage(
+						Staff.getREPORT_PREFIX() + ChatColor.RED + "Vous avez déjà fait un report il y a moins de "
+								+ cooldownMinute + " minutes.");
+				return true;
+			} else {
+				int index = plugin.isPunished(p, PunishType.REPORT);
+				if (index != -1) {
+					p.sendMessage(plugin.getPunishments().get(index).getPrettyMessage());
+					return true;
+				}
+			}
 			if (args.length == 1) {
 				Player reported = Bukkit.getPlayer(args[0]);
 				if (reported == null) {
-					p.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.RED + "Joueur " + args[0] + " introuvable ...");
+					p.sendMessage(
+							Staff.getREPORT_PREFIX() + ChatColor.RED + "Joueur " + args[0] + " introuvable ...");
 					return true;
 				}
 				// TODO
@@ -40,7 +55,8 @@ public class CommandReportExecutor implements CommandExecutor {
 			} else if (args.length >= 2) {
 				Player reported = Bukkit.getPlayer(args[0]);
 				if (reported == null) {
-					p.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.RED + "Joueur " + args[0] + " introuvable ...");
+					p.sendMessage(
+							Staff.getREPORT_PREFIX() + ChatColor.RED + "Joueur " + args[0] + " introuvable ...");
 					return true;
 				}
 				String reason = "";
