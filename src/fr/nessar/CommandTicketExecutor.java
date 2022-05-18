@@ -31,7 +31,7 @@ public class CommandTicketExecutor implements CommandExecutor {
 		}
 		Player p = (Player) sender;
 		if (commandLabel.equalsIgnoreCase("ticket") && args.length >= 1) {
-			if (plugin.isLastReportInCoolDown(p, false)) {
+			if (plugin.getLastReportInCoolDown(p, false) != -1) {
 				p.sendMessage(
 						Staff.getREPORT_PREFIX() + ChatColor.RED + "Vous avez déjà fait un ticket il y a moins de "
 								+ cooldownMinute + " minutes.");

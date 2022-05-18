@@ -88,27 +88,26 @@ public class Report {
 		return ret;
 	}
 
-	public TextComponent getChatMessage(int index) {
+	public TextComponent[] getChatMessage(String before, int index) {
 		String loreOneString = "";
+		if (this.isReport())
+			loreOneString += ChatColor.RED + "Report " + ChatColor.GRAY + "#" + index;
+		else
+			loreOneString += ChatColor.BLUE + "Ticket " + ChatColor.GRAY + "#" + index;
 		for (String lore : this.getLore()) {
-			loreOneString += lore + "\n";
+			loreOneString += "\n" + lore;
 		}
+		TextComponent title = new TextComponent(before);
 		TextComponent message = new TextComponent(
 				(this.isTicket() ? ChatColor.BLUE + "Ticket " : ChatColor.RED + "Report ") + ChatColor.GRAY + "#"
 						+ index);
 		message.setHoverEvent(
 				new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(loreOneString).create()));
-		message.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "staff editreport " + index));
-		return message;
+		message.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/staff editreport " + index));
+		TextComponent[] ret = { title, message };
+		return ret;
 	}
 
-	// ["",{"text":"[","color":"gray"},{"text":"Report","color":"gold"},{"text":"]","color":"gray"},{"text":"
-	// Nouveau ","color":"green"},{"text":"Report
-	// ","color":"red","clickEvent":{"action":"run_command","value":"editreport
-	// 1"},"hoverEvent":{"action":"show_text","value":"testing new
-	// testnewnewtest"}},{"text":"#1","color":"gray","clickEvent":{"action":"run_command","value":"editreport
-	// 1"},"hoverEvent":{"action":"show_text","value":"testing new
-	// testnewnewtest"}}]
 	public Report(Player reporter, Player reported, String reportReason, boolean report) {
 		this(reporter, reported, reportReason, new Date().getTime(), report, ReportStatus.WAITING);
 	}
@@ -123,6 +122,10 @@ public class Report {
 
 	public boolean getIgnoreCooldown() {
 		return this.ignoreCoolDown;
+	}
+
+	public void setIgnoreCooldown(boolean newStatus) {
+		this.ignoreCoolDown = newStatus;
 	}
 
 	public ReportStatus getStatus() {
@@ -150,7 +153,7 @@ public class Report {
 	}
 
 	public boolean isInCooldown() {
-		return !this.ignoreCoolDown && new Date().getTime() > this.reportTime + cooldownTime;
+		return !this.ignoreCoolDown && new Date().getTime() < this.reportTime + cooldownTime;
 	}
 
 	public String getReportReason() {

@@ -31,7 +31,7 @@ public class CommandReportExecutor implements CommandExecutor {
 		}
 		Player p = (Player) sender;
 		if (commandLabel.equalsIgnoreCase("report")) {
-			if (plugin.isLastReportInCoolDown(p, true)) {
+			if (plugin.getLastReportInCoolDown(p, true) != -1) {
 				p.sendMessage(
 						Staff.getREPORT_PREFIX() + ChatColor.RED + "Vous avez déjà fait un report il y a moins de "
 								+ cooldownMinute + " minutes.");

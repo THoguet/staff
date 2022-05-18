@@ -18,6 +18,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import fr.nessar.Menu.Freeze;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.milkbowl.vault.permission.Permission;
 
 public class Staff extends JavaPlugin {
@@ -131,6 +132,14 @@ public class Staff extends JavaPlugin {
         }
     }
 
+    public void notifyStaff(TextComponent[] message) {
+        for (OfflinePlayer offlinePlayer : staffList) {
+            Player isOnline = Bukkit.getPlayer(offlinePlayer.getUniqueId());
+            if (isOnline != null)
+                isOnline.spigot().sendMessage(message);
+        }
+    }
+
     public static String getNumberPlusZero(int time) {
         if (time < 10) {
             return "0" + time;
@@ -238,8 +247,8 @@ public class Staff extends JavaPlugin {
         }
         reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre report a bien été pris en compte !");
         this.reports.add(freshReport);
-        this.notifyStaff(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Nouveau "
-                + freshReport.getChatMessage(this.reports.size() - 1)); // TODO
+        this.notifyStaff(freshReport.getChatMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Nouveau ",
+                this.reports.size() - 1)); // TODO
     }
 
     public void updateReport(int indexReportToUpdate, Report newReport, Player updater) {
@@ -256,7 +265,9 @@ public class Staff extends JavaPlugin {
         this.reports.set(indexReportToUpdate, newReport);
         Player reporter = Bukkit.getPlayer(UUID.fromString(newReport.getReporter().getUniqueId()));
         if (reporter != null)
-            reporter.sendMessage(Staff.getREPORT_PREFIX() + "Votre report a été actualisé"); // TODO
+            reporter.spigot()
+                    .sendMessage(newReport.getChatMessage(Staff.getREPORT_PREFIX() + "Votre report a été actualisé: ",
+                            this.reports.size() - 1)); // TODO
     }
 
     public void newTicket(Player reporter, String reportReason) {
@@ -271,8 +282,8 @@ public class Staff extends JavaPlugin {
         }
         reporter.sendMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Votre ticket a bien été pris en compte !");
         this.reports.add(freshTicket);
-        this.notifyStaff(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Nouveau "
-                + freshTicket.getChatMessage((this.reports.size() - 1)).toLegacyText()); // TODO
+        this.notifyStaff(freshTicket.getChatMessage(Staff.getREPORT_PREFIX() + ChatColor.GREEN + "Nouveau ",
+                this.reports.size() - 1)); // TODO
     }
 
     public static String getUrlDB() {
@@ -283,13 +294,14 @@ public class Staff extends JavaPlugin {
         return this.reports.size();
     }
 
-    public boolean isLastReportInCoolDown(Player p, boolean report) {
+    public int getLastReportInCoolDown(Player p, boolean report) {
         for (int i = reports.size() - 1; i > 0; i--) {
             if (reports.get(i).getReporter().getUniqueId().equals(p.getUniqueId().toString())
                     && reports.get(i).isReport() == report)
-                return reports.get(i).isInCooldown();
+                if (reports.get(i).isInCooldown())
+                    return i;
         }
-        return false;
+        return -1;
     }
 
     public static int getNumberAtEndStr(String analyze) {
